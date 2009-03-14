@@ -55,8 +55,6 @@
                                                (> ~var-name ~(second range)))
                                        (throwf "%s is out of range %s" ~display-name ~range))))))
 
-(make-modifiable phy [8 20] 10)
-
 (defn add-modifiable
   "Adds the cell and a validator to a model"
   [modifiable model]
@@ -133,67 +131,77 @@
     `(cell :validator (when (> (count ~(col-from-name symb)) 1)
                         (throwf Exception "Primary stat %s should only have one secondary stat modifier" ~n)))))
 
-(defn build-main-character-model
-  "Returns a collection of cells defining the core model of a JAGS character"
+(defstruct jags-character
+  :primary-stats    ; The modifiables making the primary stats
+  :model            ; The dataflow model
+  :traits)          ; A ref to a collection of traits
+  
+(defn build-character
+  "Returns a jags-character"
   []
-  [(cell total-cp-cost (apply + ?*cp-cost))
-   (cell total-ap-cost (apply + ?*ap-cost))
+  (let [primaries [(make-modifiable phy [8 20] 10)
+                   (make-modifiable ref [8 20] 10)
+                   (make-modifiable int [8 20] 10)]
+        model [(cell :source name "-- name --")
 
-   (cell :source phy 10)
-   (cell :source ref 10)
-   (cell :source int 10)
+               (cell total-cp-cost (apply + ?*cp-cost))
+               (cell total-ap-cost (apply + ?*ap-cost))
 
-   (primary-stat-cost phy)
-   (primary-stat-cost ref)
-   (primary-stat-cost int)
+               (primary-stat-cost phy)
+               (primary-stat-cost ref)
+               (primary-stat-cost int)
 
-   (secondary-stat str phy)
-   (secondary-stat base-bld phy) ; for dp calculation
-   (cell bld (apply + ?base-bld ?*bld-mods)) ; for damage bonus and other stuff
-   (cell displayed-build (apply + ?bld ?*displayed-bld-mods)) ; This is to handle light
-   (secondary-stat con phy)
+               (secondary-stat str phy)
+               (secondary-stat base-bld phy) ; for dp calculation
+               (cell bld (apply + ?base-bld ?*bld-mods)) ; for damage bonus and other stuff
+               (cell displayed-build (apply + ?bld ?*displayed-bld-mods)) ; This is to handle light
+               (secondary-stat con phy)
 
-   (secondary-stat cor ref)
-   (secondary-stat rea ref)
-   (secondary-stat agi ref)
+               (secondary-stat cor ref)
+               (secondary-stat rea ref)
+               (secondary-stat agi ref)
 
-   (secondary-stat res int)
-   (secondary-stat mem int)
-   (secondary-stat wil int)
+               (secondary-stat res int)
+               (secondary-stat mem int)
+               (secondary-stat wil int)
 
-   (cell base-damage (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
-   (cell hand-to-hand-damage (apply + ?base-damage ?*hand-to-hand-damage-mods))
+               (cell base-damage (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
+               (cell hand-to-hand-damage (apply + ?base-damage ?*hand-to-hand-damage-mods))
 
-   (cell charm (apply + 10 ?*charm-mods))
-   (cell intimidate (apply + 10 ?*intimidate-mods))
-   (cell persuade (apply + 10 ?*persuade-mods))
-   (cell recruit (apply + 10 ?*recruit-mods))
+               (cell charm (apply + 10 ?*charm-mods))
+               (cell intimidate (apply + 10 ?*intimidate-mods))
+               (cell persuade (apply + 10 ?*persuade-mods))
+               (cell recruit (apply + 10 ?*recruit-mods))
 
-   (cell damage-points (apply + ?con (build-modifier-table ?base-bld) ?*damage-points-mods))
+               (cell damage-points (apply + ?con (build-modifier-table ?base-bld) ?*damage-points-mods))
 
-   (cell base-grapple (+ ?str (quot ?bld 5)))
-   (cell defensive-grapple (apply + ?base-grapple ?*defensive-grapple-mods))
-   (cell offensive-grapple (let [base (apply + ?base-grapple ?*offensive-grapple-mods)]
-                             (max (+ base 2) (round (* base 1.2)))))
+               (cell base-grapple (+ ?str (quot ?bld 5)))
+               (cell defensive-grapple (apply + ?base-grapple ?*defensive-grapple-mods))
+               (cell offensive-grapple (let [base (apply + ?base-grapple ?*offensive-grapple-mods)]
+                                         (max (+ base 2) (round (* base 1.2)))))
 
-   (cell defensive-grapple-mods (compute-grapple-mod ?*defensive-grapple-skill-mods))
-   (cell offensive-grapple-mods (compute-grapple-mod ?*offensive-grapple-skill-mods))
+               (cell defensive-grapple-mods (compute-grapple-mod ?*defensive-grapple-skill-mods))
+               (cell offensive-grapple-mods (compute-grapple-mod ?*offensive-grapple-skill-mods))
 
-   (cell walking-ground-speed (apply + (compute-walking-speed ?rea) ?*walking-ground-speed-mods))
-   (cell running-ground-speed (apply + (compute-running-speed ?rea) ?*running-ground-speed-mods))
-   (cell sprinting-ground-speed (apply + (compute-sprinting-speed ?rea) ?*sprinting-ground-speed-mods))
+               (cell walking-ground-speed (apply + (compute-walking-speed ?rea) ?*walking-ground-speed-mods))
+               (cell running-ground-speed (apply + (compute-running-speed ?rea) ?*running-ground-speed-mods))
+               (cell sprinting-ground-speed (apply + (compute-sprinting-speed ?rea) ?*sprinting-ground-speed-mods))
 
-   (cell initiative (apply + ?rea ?*initiative-mods))
+               (cell initiative (apply + ?rea ?*initiative-mods))
    
-   (cell perception (apply + ?res ?*perception-mods))
+               (cell perception (apply + ?res ?*perception-mods))
 
-   ;; Ensure the max. number of secondary stat mods are respected
-   (cell :validator (when (> (count ?*secondary-stat-modifier) 3)
-                      (throwf Exception "Too many secondary stat modifiers: max 3")))
-   (max-secondary-mods phy)
-   (max-secondary-mods ref)
-   (max-secondary-mods int)
-])   
+               ;; Ensure the max. number of secondary stat mods are respected
+               (cell :validator (when (> (count ?*secondary-stat-modifier) 3)
+                                  (throwf Exception "Too many secondary stat modifiers: max 3")))
+               (max-secondary-mods phy)
+               (max-secondary-mods ref)
+               (max-secondary-mods int)]
+        traits (ref #{})]
+    (struct-map jags-character
+      :primaries primaries
+      :model (build-dataflow (concat (map :cell primaries) (map :validator primaries) model))
+      :traits traits)))
 
 ;;; Traits and skills
 
@@ -208,6 +216,18 @@
   :modifiables   ; A collection of modifiables
   :add           ; A function of one argument, to add this to a character model
   :remove)       ; The same, but removes this
+
+(defn add-trait
+  "Add trait to character"
+  [ch tr]
+  (dosync (alter (:traits ch) conj tr)
+          ((:add tr) (:model ch))))
+
+(defn remove-trait
+  "Remove a trait from a character"
+  [ch tr]
+  (dosync (alter (:traits ch) disj tr)
+          ((:remove tr) (:model ch))))
 
 (def secondary-stat-cost-table
      (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
@@ -258,8 +278,8 @@
 
 (def powerful ((:make (standard-secondary-stat-trait powerful str phy :increase))))
 
-(def fred (build-dataflow (build-main-character-model)))
-(print-dataflow fred)
+(def fred (build-character))
+(print-dataflow (:model fred))
 
 ((:add powerful) fred)
 
@@ -270,6 +290,7 @@
 (use :reload 'jagsrpg.model)
 (use :reload 'jls.dataflow.dataflow)
 (use 'clojure.contrib.stacktrace) (e)
+(use 'clojure.contrib.trace)
 )
 
 ;; End of file
