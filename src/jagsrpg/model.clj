@@ -13,8 +13,9 @@
 ;;  straszheimjeffrey (gmail)
 ;;  Created 14 March 2009
 
-(ns jagsrpg.model.clj
+(ns jagsrpg.model
   (:use jls.dataflow.dataflow)
+  (:use [clojure.contrib.except :only (throwf)])
   (:use [clojure.contrib.math :only (round)]))
 
 (defn var-from-name
@@ -56,7 +57,8 @@
   [mods]
   (if (empty? mods)
     0
-    (let [sorted (-> mods sort reverse)
+    (let [sorted (reverse (sort-by (fn [[mod level]]
+                                     (- (* mod 5) level))) mods)
           [highest _] (first sorted)
           others (next sorted)
           step (fn [_ level]
@@ -84,6 +86,14 @@
 (def compute-running-speed (make-speed-function running-speed-table 2))
 (def compute-sprinting-speed (make-speed-function sprinting-speed-table 2))
 
+(defmacro max-secondary-mods
+  "Ensure that the primary stat has only one secondary modified"
+  [stat]
+  (let [n (name stat)
+        symb (symbol (str n "-secondary-mod"))]
+    `(cell :validator (when (> (count ~(col-from-name symb)) 1)
+                        (throwf Exception "Primary stat %s should only have one secondary stat modifier" ~n)))))
+
 (defn build-main-character-model
   "Returns a collection of cells defining the core model of a JAGS character"
   []
@@ -99,7 +109,9 @@
    (primary-stat-cost int)
 
    (secondary-stat str phy)
-   (secondary-stat bld phy)
+   (secondary-stat base-bld phy) ; for dp calculation
+   (cell bld (apply + ?base-bld ?*bld-mods)) ; for damage bonus and other stuff
+   (cell displayed-build (apply + ?bld ?*displayed-bld-mods)) ; This is to handle light
    (secondary-stat con phy)
 
    (secondary-stat cor ref)
@@ -118,7 +130,7 @@
    (cell persuade (apply + 10 ?*persuade-mods))
    (cell recruit (apply + 10 ?*recruit-mods))
 
-   (cell damage-points (apply + ?con (build-modifier-table ?bld) ?*damage-points-mods))
+   (cell damage-points (apply + ?con (build-modifier-table ?base-bld) ?*damage-points-mods))
 
    (cell base-grapple (+ ?str (quot ?bld 5)))
    (cell defensive-grapple (apply + ?base-grapple ?*defensive-grapple-mods))
@@ -135,6 +147,13 @@
    (cell initiative (apply + ?rea ?*initiative-mods))
    
    (cell perception (apply + ?res ?*perception-mods))
+
+   ;; Ensure the max. number of secondary stat mods are respected
+   (cell :validator (when (> (count ?*secondary-stat-modifier) 3)
+                      (throwf Exception "Too many secondary stat modifiers: max 3")))
+   (max-secondary-mods phy)
+   (max-secondary-mods ref)
+   (max-secondary-mods int)
 ])   
 
 (comment
@@ -143,6 +162,10 @@
 (update-values fred {'phy 15 'int 12})
 (add-cells fred [(cell ap-cost 5)])
 (remove-cells fred (get-cells fred 'ap-cost))
+
+(use :reload 'jagsrpg.model)
+(use :reload 'jls.dataflow.dataflow)
+(use 'clojure.contrib.stacktrace) (e)
 )
 
 ;; End of file
