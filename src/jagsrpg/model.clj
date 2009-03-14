@@ -72,12 +72,20 @@
    (secondary-stat mem int)
    (secondary-stat wil int)
 
+   (cell base-damage (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
+
+   (cell charm (apply + 10 ?*charm-mods))
+   (cell intimidate (apply + 10 ?*intimidate-mods))
+   (cell persuade (apply + 10 ?*persuade-mods))
+   (cell recruit (apply + 10 ?*recruit-mods))
 ])   
 
 (comment
 (def fred (build-dataflow (build-main-character-model)))
 (print-dataflow fred)
-(update-values fred {'phy 11 'int 12})
+(update-values fred {'phy 15 'int 12})
+(add-cells fred [(cell ap-cost 5)])
+(remove-cells fred (get-cells fred 'ap-cost))
 )
 
 ;; End of file
