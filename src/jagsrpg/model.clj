@@ -57,12 +57,12 @@
 
 (defn add-modifiable
   "Adds the cell and a validator to a model"
-  [modifiable model]
+  [model modifiable]
   (add-cells model [(:cell modifiable) (:validator modifiable)]))
 
 (defn remove-modifiable
   "Removes the cell and validator from a model"
-  [modifiable model]
+  [model modifiable]
   (remove-cells model [(:cell modifiable) (:validator modifiable)]))
 
 (defmacro secondary-stat
@@ -255,37 +255,36 @@
          :name ~display-name
          :make (fn []
                  (let [main-cell# (cell :source ~cell-name 1)
+                       modifiable# (make-modifiable ~cell-name [1 2] 1)
                        cost-cell# (cell ~'cp-cost (secondary-cost ~(var-from-name cell-name)
                                                                 ~(var-from-name primary)
                                                                 ~multiplier))
                        mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name) ~multiplier))
                        val1-cell# (cell ~'secondary-stat-modifier (quote ~cell-name))
                        val2-cell# (cell ~val2-name (quote ~cell-name))
-                       val3-cell# (cell :validator (when (or (< ~(var-from-name cell-name) 1)
-                                                             (> ~(var-from-name cell-name) 2))
-                                                      (throwf Exception "%s is out of range" ~display-name)))
-                       cells# [main-cell# cost-cell# mod-cell# val1-cell# val2-cell# val3-cell#]]
+                       cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
                    (struct-map secondary-stat-trait
                      :name ~display-name
-                     :modifiables [(struct  modifiable "Level" [1 2] main-cell#)]
+                     :modifiables [modifiable#]
                      :add (fn [char#]
+                            (add-modifiable char# modifiable#)
                             (add-cells char# cells#))
                      :remove (fn [char#]
-                               (remove-cells char# cells#))))))))
+                               (remove-cells char# cells#)
+                               (remove-modifiable char# modifiable#))))))))
        
 
 (comment
 
-(def powerful ((:make (standard-secondary-stat-trait powerful str phy :increase))))
-
 (def fred (build-character))
 (print-dataflow (:model fred))
 
-((:add powerful) fred)
+(def powerful ((:make (standard-secondary-stat-trait powerful str phy :increase))))
+(add-trait fred powerful)
+(remove-trait fred powerful)
 
-(update-values fred {'powerful 2})
-(add-cells fred [(cell ap-cost 5)])
-(remove-cells fred (get-cells fred 'ap-cost))
+(update-values (:model fred) {'powerful 3})
+(update-values (:model fred) {'phy 15})
 
 (use :reload 'jagsrpg.model)
 (use :reload 'jls.dataflow.dataflow)
