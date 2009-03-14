@@ -29,6 +29,44 @@
   [symb]
   (symbol (str "?*" (name symb))))
 
+(defn make-display-name
+  "Converts name such as fat-obese to Fat/Obese"
+  [name]
+  (str-join "/" (map #(apply str (Character/toUpperCase (first %)) (next %))
+                     (re-split #"-" (str name)))))
+
+;; A modifiable source cell
+(defstruct modifiable
+  :name       ; For display, a String
+  :range      ; [min, max] integers
+  :cell       ; A source cell
+  :validator) ; A validator cell
+
+(defmacro make-modifiable
+  "Create a modifiable instance"
+  [symb range start]
+  (let [display-name (make-display-name symb)
+        var-name (var-from-name symb)]
+    `(struct-map modifiable
+         :name ~display-name
+         :range ~range
+         :cell (cell :source ~symb ~start)
+         :validator (cell :validator (when (or (< ~var-name ~(first range))
+                                               (> ~var-name ~(second range)))
+                                       (throwf "%s is out of range %s" ~display-name ~range))))))
+
+(make-modifiable phy [8 20] 10)
+
+(defn add-modifiable
+  "Adds the cell and a validator to a model"
+  [modifiable model]
+  (add-cells model [(:cell modifiable) (:validator modifiable)]))
+
+(defn remove-modifiable
+  "Removes the cell and validator from a model"
+  [modifiable model]
+  (remove-cells model [(:cell modifiable) (:validator modifiable)]))
+
 (defmacro secondary-stat
   "Builds a secondary stat"
   [stat primary]
@@ -164,12 +202,6 @@
   :name    ; The name, a String
   :make)   ; Creates an instance -- no parameters
 
-;; A modifiable source cell
-(defstruct modifiable
-  :name       ; For display, a String
-  :range      ; [min, max] integers
-  :cell)      ; A source cell
-
 ;; A modifier of a secondary trait
 (defstruct secondary-stat-trait
   :name          ; The name, a String
@@ -186,12 +218,6 @@
   (apply + (for [i (range 1 (inc level))]
              (let [val (+ primary (* i mult))]
                (secondary-stat-cost-table val)))))
-
-(defn secondary-display-name
-  "Converts name such as fat-obese to Fat/Obese"
-  [name]
-  (str-join "/" (map #(apply str (Character/toUpperCase (first %)) (next %))
-                     (re-split #"-" (str name)))))
 
 (defmacro standard-secondary-stat-trait
   "A trait-factory to build a standard secondary trait modifier.
