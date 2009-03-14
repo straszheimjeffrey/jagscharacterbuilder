@@ -16,6 +16,7 @@
 (ns jagsrpg.model
   (:use jls.dataflow.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
+  (:use [clojure.contrib.str-utils :only (re-split str-join)])
   (:use [clojure.contrib.math :only (round)]))
 
 (defn var-from-name
@@ -186,11 +187,19 @@
              (let [val (+ primary (* i mult))]
                (secondary-stat-cost-table val)))))
 
+(defn secondary-display-name
+  "Converts name such as fat-obese to Fat/Obese"
+  [name]
+  (str-join "/" (map #(apply str (Character/toUpperCase (first %)) (next %))
+                     (re-split #"-" (str name)))))
+
 (defmacro standard-secondary-stat-trait
   "A trait-factory to build a standard secondary trait modifier.
-   Direction is :increase or :decrease"
-  [display-name cell-name secondary primary direction]
-  (let [multiplier (cond
+   Direction is :increase or :decrease.  If display-name is nil, it
+   will equal the cell-name"
+  [cell-name secondary primary direction]
+  (let [display-name (secondary-display-name cell-name)
+        multiplier (cond
                     (= direction :increase) 1
                     (= direction :decrease) -1
                     :otherwise (throwf Exception "Bad direction %s" (str :direction)))
@@ -205,19 +214,23 @@
                                                                 ~multiplier))
                        mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name) ~multiplier))
                        val1-cell# (cell ~'secondary-stat-modifier (quote ~cell-name))
-                       val2-cell# (cell ~val2-name (quote ~cell-name))]
+                       val2-cell# (cell ~val2-name (quote ~cell-name))
+                       val3-cell# (cell :validator (when (or (< ~(var-from-name cell-name) 1)
+                                                             (> ~(var-from-name cell-name) 2))
+                                                      (throwf Exception "%s is out of range" ~display-name)))
+                       cells# [main-cell# cost-cell# mod-cell# val1-cell# val2-cell# val3-cell#]]
                    (struct-map secondary-stat-trait
                      :name ~display-name
                      :modifiables [(struct  modifiable "Level" [1 2] main-cell#)]
                      :add (fn [char#]
-                            (add-cells char# [main-cell# cost-cell# mod-cell# val1-cell# val2-cell#]))
+                            (add-cells char# cells#))
                      :remove (fn [char#]
-                               (remove-cells char# [main-cell# cost-cell# mod-cell# val1-cell# val2-cell#]))))))))
+                               (remove-cells char# cells#))))))))
        
 
 (comment
 
-(def powerful ((:make (standard-secondary-stat-trait "Powerful" qpowerful str phy :increase))))
+(def powerful ((:make (standard-secondary-stat-trait powerful str phy :increase))))
 
 (def fred (build-dataflow (build-main-character-model)))
 (print-dataflow fred)
