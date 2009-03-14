@@ -156,9 +156,70 @@
    (max-secondary-mods int)
 ])   
 
+;;; Traits and skills
+
+;; A trait factory makes a trait or skill instance
+(defstruct trait-factory
+  :name    ; The name, a String
+  :make)   ; Creates an instance -- no parameters
+
+;; A modifiable source cell
+(defstruct modifiable
+  :name       ; For display, a String
+  :range      ; [min, max] integers
+  :cell)      ; A source cell
+
+;; A modifier of a secondary trait
+(defstruct secondary-stat-trait
+  :name          ; The name, a String
+  :modifiables   ; A collection of modifiables
+  :add           ; A function of one argument, to add this to a character model
+  :remove)       ; The same, but removes this
+
+(defn secondary-cost
+  "Compute the standard secondary cost"
+  [level primary mult]
+  1)
+
+
+(defmacro standard-secondary-stat-trait
+  "A trait-factory to build a standard secondary trait modifier.
+   Direction is :increase or :decrease"
+  [display-name cell-name secondary primary direction]
+  (let [multiplier (cond
+                    (= direction :increase) 1
+                    (= direction :decrease) -1
+                    :otherwise (throwf Exception "Bad direction %s" (str :direction)))
+        modifier-name (symbol (str (name secondary) "-mods"))
+        val2-name (symbol (str (name secondary) "-secondary-mod"))]
+    `(struct-map trait-factory
+         :name ~display-name
+         :make (fn []
+                 (let [main-cell# (cell :source ~cell-name 1)
+                       cost-cell# (cell ~'cp-cost (secondary-cost ~(var-from-name cell-name)
+                                                                ~(var-from-name primary)
+                                                                ~multiplier))
+                       mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name) ~multiplier))
+                       val1-cell# (cell ~'secondary-stat-modifier 0)
+                       val2-cell# (cell ~val2-name 0)]
+                   (struct-map secondary-stat-trait
+                     :name ~display-name
+                     :modifiables [(struct  modifiable "Level" [1 2] main-cell#)]
+                     :add (fn [char#]
+                            (add-cells char# [main-cell# cost-cell# mod-cell# val1-cell# val2-cell#]))
+                     :remove (fn [char#]
+                               (remove-cells char# [main-cell# cost-cell# mod-cell# val1-cell# val2-cell#]))))))))
+       
+
 (comment
+
+(def powerful ((:make (standard-secondary-stat-trait "Powerful" powerful str phy :increase))))
+
 (def fred (build-dataflow (build-main-character-model)))
 (print-dataflow fred)
+
+((:add powerful) fred)
+
 (update-values fred {'phy 15 'int 12})
 (add-cells fred [(cell ap-cost 5)])
 (remove-cells fred (get-cells fred 'ap-cost))
