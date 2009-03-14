@@ -176,11 +176,15 @@
   :add           ; A function of one argument, to add this to a character model
   :remove)       ; The same, but removes this
 
+(def secondary-stat-cost-table
+     (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
+
 (defn secondary-cost
   "Compute the standard secondary cost"
   [level primary mult]
-  1)
-
+  (apply + (for [i (range 1 (inc level))]
+             (let [val (+ primary (* i mult))]
+               (secondary-stat-cost-table val)))))
 
 (defmacro standard-secondary-stat-trait
   "A trait-factory to build a standard secondary trait modifier.
@@ -191,7 +195,7 @@
                     (= direction :decrease) -1
                     :otherwise (throwf Exception "Bad direction %s" (str :direction)))
         modifier-name (symbol (str (name secondary) "-mods"))
-        val2-name (symbol (str (name secondary) "-secondary-mod"))]
+        val2-name (symbol (str (name primary) "-secondary-mod"))]
     `(struct-map trait-factory
          :name ~display-name
          :make (fn []
@@ -200,8 +204,8 @@
                                                                 ~(var-from-name primary)
                                                                 ~multiplier))
                        mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name) ~multiplier))
-                       val1-cell# (cell ~'secondary-stat-modifier 0)
-                       val2-cell# (cell ~val2-name 0)]
+                       val1-cell# (cell ~'secondary-stat-modifier (quote ~cell-name))
+                       val2-cell# (cell ~val2-name (quote ~cell-name))]
                    (struct-map secondary-stat-trait
                      :name ~display-name
                      :modifiables [(struct  modifiable "Level" [1 2] main-cell#)]
@@ -213,14 +217,14 @@
 
 (comment
 
-(def powerful ((:make (standard-secondary-stat-trait "Powerful" powerful str phy :increase))))
+(def powerful ((:make (standard-secondary-stat-trait "Powerful" qpowerful str phy :increase))))
 
 (def fred (build-dataflow (build-main-character-model)))
 (print-dataflow fred)
 
 ((:add powerful) fred)
 
-(update-values fred {'phy 15 'int 12})
+(update-values fred {'powerful 2})
 (add-cells fred [(cell ap-cost 5)])
 (remove-cells fred (get-cells fred 'ap-cost))
 
