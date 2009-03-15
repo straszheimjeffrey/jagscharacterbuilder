@@ -51,9 +51,10 @@
          :name ~display-name
          :range ~range
          :cell (cell :source ~symb ~start)
-         :validator (cell :validator (when (or (< ~var-name ~(first range))
-                                               (> ~var-name ~(second range)))
-                                       (throwf "%s is out of range %s" ~display-name ~range))))))
+         :validator (cell :validator
+                          (when (or (< ~var-name ~(first range))
+                                    (> ~var-name ~(second range)))
+                            (throwf "%s is out of range %s" ~display-name ~range))))))
 
 (defn add-modifiable
   "Adds the cell and a validator to a model"
@@ -128,8 +129,11 @@
   [stat]
   (let [n (name stat)
         symb (symbol (str n "-secondary-mod"))]
-    `(cell :validator (when (> (count ~(col-from-name symb)) 1)
-                        (throwf Exception "Primary stat %s should only have one secondary stat modifier" ~n)))))
+    `(cell :validator
+           (when (> (count ~(col-from-name symb)) 1)
+             (throwf Exception
+                     "Primary stat %s should only have one secondary stat modifier"
+                     ~n)))))
 
 (defstruct jags-character
   :primary-stats    ; The modifiables making the primary stats
@@ -152,9 +156,12 @@
                (primary-stat-cost int)
 
                (secondary-stat str phy)
-               (secondary-stat base-bld phy) ; for dp calculation
-               (cell bld (apply + ?base-bld ?*bld-mods)) ; for damage bonus and other stuff
-               (cell displayed-build (apply + ?bld ?*displayed-bld-mods)) ; This is to handle light
+               ; for dp calculation
+               (secondary-stat base-bld phy)
+               ; for damage bonus and other stuff
+               (cell bld (apply + ?base-bld ?*bld-mods))
+               ; This is to handle light 
+               (cell displayed-build (apply + ?bld ?*displayed-bld-mods))
                (secondary-stat con phy)
 
                (secondary-stat cor ref)
@@ -165,42 +172,58 @@
                (secondary-stat mem int)
                (secondary-stat wil int)
 
-               (cell base-damage (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
-               (cell hand-to-hand-damage (apply + ?base-damage ?*hand-to-hand-damage-mods))
+               (cell base-damage
+                     (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
+               (cell hand-to-hand-damage
+                     (apply + ?base-damage ?*hand-to-hand-damage-mods))
 
                (cell charm (apply + 10 ?*charm-mods))
                (cell intimidate (apply + 10 ?*intimidate-mods))
                (cell persuade (apply + 10 ?*persuade-mods))
                (cell recruit (apply + 10 ?*recruit-mods))
 
-               (cell damage-points (apply + ?con (build-modifier-table ?base-bld) ?*damage-points-mods))
+               (cell damage-points
+                     (apply + ?con
+                              (build-modifier-table ?base-bld)
+                              ?*damage-points-mods))
 
                (cell base-grapple (+ ?str (quot ?bld 5)))
                (cell defensive-grapple (apply + ?base-grapple ?*defensive-grapple-mods))
-               (cell offensive-grapple (let [base (apply + ?base-grapple ?*offensive-grapple-mods)]
-                                         (max (+ base 2) (round (* base 1.2)))))
+               (cell offensive-grapple
+                     (let [base (apply + ?base-grapple ?*offensive-grapple-mods)]
+                       (max (+ base 2) (round (* base 1.2)))))
 
-               (cell defensive-grapple-mods (compute-grapple-mod ?*defensive-grapple-skill-mods))
-               (cell offensive-grapple-mods (compute-grapple-mod ?*offensive-grapple-skill-mods))
+               (cell defensive-grapple-mods
+                     (compute-grapple-mod ?*defensive-grapple-skill-mods))
+               (cell offensive-grapple-mods
+                     (compute-grapple-mod ?*offensive-grapple-skill-mods))
 
-               (cell walking-ground-speed (apply + (compute-walking-speed ?rea) ?*walking-ground-speed-mods))
-               (cell running-ground-speed (apply + (compute-running-speed ?rea) ?*running-ground-speed-mods))
-               (cell sprinting-ground-speed (apply + (compute-sprinting-speed ?rea) ?*sprinting-ground-speed-mods))
+               (cell walking-ground-speed
+                     (apply + (compute-walking-speed ?rea) ?*walking-ground-speed-mods))
+               (cell running-ground-speed
+                     (apply + (compute-running-speed ?rea) ?*running-ground-speed-mods))
+               (cell sprinting-ground-speed
+                     (apply +
+                            (compute-sprinting-speed ?rea)
+                            ?*sprinting-ground-speed-mods))
 
                (cell initiative (apply + ?rea ?*initiative-mods))
    
                (cell perception (apply + ?res ?*perception-mods))
 
                ;; Ensure the max. number of secondary stat mods are respected
-               (cell :validator (when (> (count ?*secondary-stat-modifier) 3)
-                                  (throwf Exception "Too many secondary stat modifiers: max 3")))
+               (cell :validator
+                     (when (> (count ?*secondary-stat-modifier) 3)
+                       (throwf Exception
+                               "Too many secondary stat modifiers: max 3")))
                (max-secondary-mods phy)
                (max-secondary-mods ref)
                (max-secondary-mods int)]
         traits (ref #{})]
     (struct-map jags-character
       :primaries primaries
-      :model (build-dataflow (concat (map :cell primaries) (map :validator primaries) model))
+      :model (build-dataflow (concat (map :cell primaries)
+                                     (map :validator primaries) model))
       :traits traits)))
 
 ;;; Traits and skills
@@ -278,11 +301,15 @@
          :make (fn []
                  (let [main-cell# (cell :source ~cell-name 1)
                        modifiable# (make-modifiable ~cell-name [1 2] 1)
-                       cost-cell# (cell ~'cp-cost (secondary-cost ~(var-from-name cell-name)
-                                                                ~(var-from-name primary)
-                                                                ~multiplier))
-                       mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name) ~multiplier))
-                       [val1-cell# val2-cell#] (secondary-validators ~primary ~cell-name)
+                       cost-cell# (cell ~'cp-cost
+                                        (secondary-cost ~(var-from-name cell-name)
+                                                        ~(var-from-name primary)
+                                                        ~multiplier))
+                       mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name)
+                                                         ~multiplier))
+                       [val1-cell# val2-cell#] (secondary-validators
+                                                ~primary
+                                                ~cell-name)
                        cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
                    (struct-map trait
                      :name ~display-name
