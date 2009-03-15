@@ -244,7 +244,7 @@
    Direction is :increase or :decrease.  If display-name is nil, it
    will equal the cell-name"
   [cell-name secondary primary direction]
-  (let [display-name (secondary-display-name cell-name)
+  (let [display-name (make-display-name cell-name)
         multiplier (cond
                     (= direction :increase) 1
                     (= direction :decrease) -1
