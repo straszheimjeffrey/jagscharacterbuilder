@@ -255,6 +255,13 @@
              (let [val (+ primary (* i mult))]
                (secondary-stat-cost-table val)))))
 
+(defmacro secondary-validators
+  "Create the secondary validation cells"
+  [prim cell-name]
+  (let [val-name (symbol (str (name prim) "-secondary-mod"))]
+    `(list (cell ~'secondary-stat-modifier (quote ~cell-name))
+           (cell ~val-name (quote ~cell-name)))))
+
 (defmacro standard-secondary-stat-trait
   "A trait-factory to build a standard secondary trait modifier.
    Direction is :increase or :decrease.  If display-name is nil, it
@@ -265,8 +272,7 @@
                     (= direction :increase) 1
                     (= direction :decrease) -1
                     :otherwise (throwf Exception "Bad direction %s" (str :direction)))
-        modifier-name (symbol (str (name secondary) "-mods"))
-        val2-name (symbol (str (name primary) "-secondary-mod"))]
+        modifier-name (symbol (str (name secondary) "-mods"))]
     `(struct-map trait-factory
          :name ~display-name
          :make (fn []
@@ -276,8 +282,7 @@
                                                                 ~(var-from-name primary)
                                                                 ~multiplier))
                        mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name) ~multiplier))
-                       val1-cell# (cell ~'secondary-stat-modifier (quote ~cell-name))
-                       val2-cell# (cell ~val2-name (quote ~cell-name))
+                       [val1-cell# val2-cell#] (secondary-validators ~primary ~cell-name)
                        cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
                    (struct-map trait
                      :name ~display-name
@@ -297,12 +302,10 @@
     `(basic-trait ~trait-name
                   (fn []
                     (let [cost# (cell ~'cp-cost ~cost)
-                          val1# (cell ~val1-name ~trait-name)
-                          val2# (cell ~'secondary-stat-modifier ~trait-name)
+                          [val1# val2#] (secondary-validators ~primary ~trait-name)
                           add-cells# (~add-cells)]
                       (list* cost# val1# val2# add-cells#))))))
            
-
 (comment
 
 (def fred (build-character))
