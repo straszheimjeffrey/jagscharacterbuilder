@@ -280,7 +280,7 @@
                    cells# (conj (~cell-builder) cost#)]
                (struct-map trait
                  :name ~trait-name
-                 :modifiables nil
+                 :modifiables [(make-modifiable mod# [1 1] 1)]
                  :cost cost#
                  :add (fn [ch#]
                         (add-cells ch# cells#))
@@ -313,9 +313,9 @@
 (defn secondary-cost
   "Compute the standard secondary cost"
   [level primary mult]
-  (apply + (for [i (range 1 (inc level))]
-             (let [val (+ primary (* i mult))]
-               (secondary-stat-cost-table val)))))
+  (* mult (apply + (for [i (range 1 (inc level))]
+                     (let [val (+ primary (* i mult))]
+                       (secondary-stat-cost-table val))))))
 
 (defmacro secondary-validators
   "Create the secondary validation cells"

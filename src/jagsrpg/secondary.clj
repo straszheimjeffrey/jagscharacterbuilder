@@ -72,14 +72,14 @@
 
       (variable-trait "Light/Short"
                       (fn [] (make-modifiable light-short [1 3] 1))
-                      (fn [] (cell 'cp-cost 0))
+                      (fn [] (cell cp-cost 0))
                       (fn [] [(cell displayed-bld-mods (* -1 ?light-short))]))
       (variable-trait "Fat/Obese"
                    (fn [] (make-modifiable fat-obese [1 2] 1))
                    (fn [] (cell cp-cost ([-3 -5] (dec ?fat-obese))))
-                   (fn [] [(cell bld-mod ([3 8] (dec ?fat-obese)))
-                           (cell damage-points-mod ([1 3] (dec ?fat-obese)))
-                           (cell agi-mod ([0 -2] (dec ?fat-obese)))]))
+                   (fn [] [(cell bld-mods ([3 8] (dec ?fat-obese)))
+                           (cell damage-points-mods ([1 3] (dec ?fat-obese)))
+                           (cell agi-mods ([0 -2] (dec ?fat-obese)))]))
       (variable-trait "Ill"
                       (fn [] (make-modifiable ill [1 3] 1))
                       (fn [] (cell cp-cost ([-1 -3 -5] (dec ?ill))))
@@ -87,11 +87,13 @@
 
 (comment
 
- (variable-trait "Light/Short"
-                 (fn [] (make-modifiable light-short [1 3] 1))
-                 (fn [] (cell 'cp-cost 0))
-                 (fn [] [(cell displayed-bld-mods (* -1 ?light-short))]))
- 
+(macroexpand '(variable-trait "Light/Short"
+                              (fn [] (make-modifiable light-short [1 3] 1))
+                              (fn [] (cell 'cp-cost 0))
+                              (fn [] [(cell displayed-bld-mods (* -1 ?light-short))])))
+
+((fn [] (cell (quote cp-cost) 0)))
+
 (use :reload 'jagsrpg.secondary)
 (use :reload 'jagsrpg.model)
 (use 'clojure.contrib.stacktrace) (e)

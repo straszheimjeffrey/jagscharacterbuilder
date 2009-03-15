@@ -85,6 +85,16 @@
                                          (.printStackTrace e)))))))))
     spinner))
 
+(defn cost-panel
+  [ch]
+  (let [layout (MigLayout.)
+        panel (JPanel. layout)]
+    (doto panel
+      (.add (label "CP Cost"))
+      (.add (tied-label ch 'total-cp-cost))
+      (.add (label "AP Cost"))
+      (.add (tied-label ch 'total-ap-cost)))))
+
 (defn main-stat-panel
   [ch]
   (let [layout (MigLayout. "wrap 9")
@@ -154,6 +164,7 @@
   (let [layout (MigLayout. "wrap 1")
         panel (JPanel. layout)]
     (doto panel
+      (.add (cost-panel ch))
       (.add (main-stat-panel ch))
       (.add (derived-stat-panel ch)))))
 
@@ -188,6 +199,7 @@
                         f (seek #(= n (:name %)) factories)]
                     (when f
                       (let [trait ((:make f))
+                            ;q (println trait)
                             nl (label (:name trait))
                             sps (map (partial tied-spinner ch) (:modifiables trait))
                             c (tied-label (:cost trait))
@@ -198,6 +210,7 @@
                           (doseq [s sps] (.add dp s))
                           (.add dp c)
                           (.add dp d)
+                          (.revalidate panel)
                           (.addActionListener d
                                (proxy [ActionListener] []
                                  (actionPerformed [evt]
@@ -205,7 +218,8 @@
                                      (.remove dp nl)
                                      (doseq [s sps] (.remove dp s))
                                      (.remove dp c)
-                                     (.remove dp d))))))))))))
+                                     (.remove dp d)
+                                     (.revalidate panel))))))))))))
       (doto panel
         (.add (scroll list))
         (.add button)))))
@@ -213,10 +227,10 @@
 (defn trait-panel
   [ch factories]
   (let [dp (trait-display-panel ch)
-        layout (MigLayout. "wrap 2")
+        layout (MigLayout. "wrap 2" "[50%:n:n][]")
         panel (JPanel. layout)]
     (doto panel
-      (.add (scroll dp))
+      (.add (scroll dp) "grow")
       (.add (trait-selection-list ch factories dp)))))
 
 
