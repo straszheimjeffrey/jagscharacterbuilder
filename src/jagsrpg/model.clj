@@ -221,7 +221,7 @@
                (max-secondary-mods int)]
         traits (ref #{})]
     (struct-map jags-character
-      :primaries primaries
+      :primary-stats primaries
       :model (build-dataflow (concat (map :cell primaries)
                                      (map :validator primaries) model))
       :traits traits)))
