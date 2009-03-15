@@ -210,8 +210,8 @@
   :name    ; The name, a String
   :make)   ; Creates an instance -- no parameters
 
-;; A modifier of a secondary trait
-(defstruct secondary-stat-trait
+;; A trait
+(defstruct trait
   :name          ; The name, a String
   :modifiables   ; A collection of modifiables
   :add           ; A function of one argument, to add this to a character model
@@ -228,6 +228,22 @@
   [ch tr]
   (dosync (alter (:traits ch) disj tr)
           ((:remove tr) (:model ch))))
+
+(defmacro basic-trait
+  "Create a basic trait factory.  cell-builder is a function returning
+   a list of cells."
+  [trait-name cell-builder]
+  `(struct-map trait-factory
+     :name ~trait-name
+     :make (fn []
+             (let [cells# (~cell-builder)]
+               (struct-map trait
+                 :name ~trait-name
+                 :modifiables nil
+                 :add (fn [ch#]
+                        (add-cells ch# cells#))
+                 :remove (fn [ch#]
+                           (remove-cells ch# cells#)))))))
 
 (def secondary-stat-cost-table
      (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
@@ -263,7 +279,7 @@
                        val1-cell# (cell ~'secondary-stat-modifier (quote ~cell-name))
                        val2-cell# (cell ~val2-name (quote ~cell-name))
                        cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
-                   (struct-map secondary-stat-trait
+                   (struct-map trait
                      :name ~display-name
                      :modifiables [modifiable#]
                      :add (fn [char#]
@@ -273,6 +289,19 @@
                                (remove-cells char# cells#)
                                (remove-modifiable char# modifiable#))))))))
        
+(defmacro basic-secondary-trait
+  "Create a basic secondary trait.  Add cells, is a function returning
+   additional cells."
+  [trait-name cost secondary primary add-cells]
+  (let [val1-name (symbol (str (name primary) "-secondary-mod"))]
+    `(basic-trait ~trait-name
+                  (fn []
+                    (let [cost# (cell ~'cp-cost ~cost)
+                          val1# (cell ~val1-name ~trait-name)
+                          val2# (cell ~'secondary-stat-modifier ~trait-name)
+                          add-cells# (~add-cells)]
+                      (list* cost# val1# val2# add-cells#))))))
+           
 
 (comment
 
@@ -283,7 +312,14 @@
 (add-trait fred powerful)
 (remove-trait fred powerful)
 
-(update-values (:model fred) {'powerful 3})
+(def puny ((:make (basic-secondary-trait "Puny" -5 str phy
+                                         (fn []
+                                           [(cell str-mods (- 8 ?phy))])))))
+
+(add-trait fred puny)
+(remove-trait fred puny)
+
+(update-values (:model fred) {'powerful 2})
 (update-values (:model fred) {'phy 15})
 
 (use :reload 'jagsrpg.model)
