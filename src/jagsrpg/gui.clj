@@ -40,23 +40,25 @@
   [t]
   (JLabel. t))
 
+
+
 (defn tied-label
   "Build a swing label that tracks a stat"
-  [ch stat]
-  (let [cell (get-cell (:model ch) stat)
-        value (get-value-from-cell cell)
-        label (JLabel. (str value))]
-    (do
-      (add-cell-watcher
-        cell
-        :key
-        (fn [key cell old-v new-v]
-          (SwingUtilities/invokeLater
-           (fn []
-             (let [n-s (str new-v)]
-               (when (not= n-s (.getText label))
-                 (.setText label n-s)))))))
-      label)))
+  ([ch stat] (tied-label (get-cell (:model ch) stat)))
+  ([cell]
+     (let [value (get-value-from-cell cell)
+           label (JLabel. (str value))]
+       (do
+         (add-cell-watcher
+          cell
+          :key
+          (fn [key cell old-v new-v]
+            (SwingUtilities/invokeLater
+             (fn []
+               (let [n-s (str new-v)]
+                 (when (not= n-s (.getText label))
+                   (.setText label n-s)))))))
+         label))))
 
 (defn tied-spinner
   "Build a spinner control that tracks a modifiable"
@@ -159,9 +161,15 @@
   [panel]
   (let [sp (JScrollPane. panel)]
     sp))
+
+(defn trait-display-panel
+  [ch]
+  (let [layout (MigLayout. "wrap 4")
+        panel (JPanel. layout)]
+    panel))
   
 (defn trait-selection-list
-  [ch factories]
+  [ch factories dp]
   (let [lm (DefaultListModel.)
         list (JList. lm)
         button (JButton. "Add")
@@ -179,12 +187,33 @@
                   (let [n (.getSelectedValue list)
                         f (seek #(= n (:name %)) factories)]
                     (when f
-                      (println ((:make f)))))))))
+                      (let [trait ((:make f))
+                            q (println trait)
+                            nl (label (:name trait))
+                            sps (map (partial tied-spinner ch) (:modifiables trait))
+                            c (tied-label (:cost trait))
+                            d (JButton. "Delete")]
+                        (do
+                          (.add dp nl)
+                          (doseq [s sps] (.add dp s))
+                          (when (< (count sps) 1) (.add (label "")))
+                          (.add dp c)
+                          (.add dp d)
+                          (add-trait ch trait)))))))))
       (doto panel
         (.add (scroll list))
         (.add button)))))
                                          
-        
+(defn trait-panel
+  [ch factories]
+  (let [dp (trait-display-panel ch)
+        layout (MigLayout. "wrap 2")
+        panel (JPanel. layout)]
+    (doto panel
+      (.add (scroll dp))
+      (.add (trait-selection-list ch factories dp)))))
+
+
 
 
 (def character (build-character))
@@ -195,7 +224,7 @@
     (doto frame
       (.setLayout layout)
       (.add (top-panel character))
-      (.add (trait-selection-list character secondary-traits))
+      (.add (trait-panel character secondary-traits))
       (.setSize 800 600)
       (.pack)
       (.setVisible true)
