@@ -16,8 +16,7 @@
 (ns jagsrpg.gui
   (:use jagsrpg.model)
   (:use jagsrpg.secondary)
-  (:use jls.dataflow.dataflow)
-  (:use clojure.contrib.miglayout))
+  (:use jls.dataflow.dataflow))
 
 (import '(javax.swing JFrame
                       JPanel
@@ -27,7 +26,9 @@
                       JButton
                       SwingUtilities)
         '(javax.swing.event ChangeListener)
-        '(java.awt FlowLayout))
+        '(java.awt FlowLayout)
+        '(net.miginfocom.swing MigLayout))
+
 
 (defn tied-label
   "Build a swing label that tracks a stat"
@@ -50,6 +51,7 @@
 (defn tied-spinner
   "Build a spinner control that tracks a modifiable"
   [ch modifiable]
+  (println "m" modifiable)
   (let [min (-> modifiable :range first)
         max (-> modifiable :range second)
         val (-> modifiable :cell :value deref)
@@ -62,34 +64,58 @@
                               (let [cur-m (-> modifiable :cell get-value-from-cell)
                                     cur-gui (.getValue spinner)]
                                 (when (not= cur-m cur-gui)
-                                  (update-values (:model ch)
-                                                 {(-> modifiable :cell :name)
-                                                  cur-gui}))))))
+                                  (try
+                                   (update-values (:model ch)
+                                                  {(-> modifiable :cell :name)
+                                                   cur-gui})
+                                   (catch Exception e
+                                     (do (.setValue spinner cur-m)
+                                         (.printStackTrace e)))))))))
     spinner))
+
+(defn main-stat-frame
+  [ch]
+  (let [layout (MigLayout. "wrap 9")
+        panel (JPanel. layout)
+        add-row (fn [p-name prim sec1-name sec1 sec2-name sec2 sec3-name sec3]
+                  (let [prim-mod (get-primary-stat ch prim)
+                        cost-name (symbol (str (name prim) "-cost"))]
+                    (doto panel
+                      (.add (JLabel. p-name) "")
+                      (.add (tied-spinner ch prim-mod) "")
+                      (.add (tied-label ch cost-name) "")
+                      (.add (JLabel. sec1-name) "")
+                      (.add (tied-label ch sec1) "")
+                      (.add (JLabel. sec2-name) "")
+                      (.add (tied-label ch sec2) "")
+                      (.add (JLabel. sec3-name) "")
+                      (.add (tied-label ch sec3) ""))))]
+    (do
+      (add-row "PHY" 'phy "STR" 'str "BLD" 'displayed-bld "CON" 'con)
+      (add-row "REF" 'ref "COR" 'cor "REA" 'rea           "AGI" 'agi)
+      (add-row "INT" 'int "RES" 'res "MEM" 'mem           "WIL" 'wil)
+      panel)))
+  
 
 (def character (build-character))
 
-(def phy (first (filter #(= (-> % :cell :name) 'phy) (:primary-stats character))))
-
-(def label (tied-label character 'str))
-(def spinner (tied-spinner character phy))
-(def frame (JFrame. "Jags Character"))
-
-(doto frame
-  (.setLayout (new FlowLayout))
-  (.add spinner)
-  (.add label)
-  (.setSize 800 600)
-;  (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-  (.pack)
-  (.setVisible true)
-  (.show))
+(defn show-frame []
+  (let [frame (JFrame. "Jags Character")]
+    (doto frame
+      (.setLayout (new FlowLayout))
+      (.add (main-stat-frame character))
+      (.setSize 800 600)
+      (.pack)
+      (.setVisible true)
+      (.show))))
            
-;(update-values (:model character) {'phy 11})
-(print-dataflow (:model character))
 
 (comment
+  (show-frame)
+  (print-dataflow (:model character))
+  
   (use :reload 'jagsrpg.gui)
+  (use 'clojure.contrib.stacktrace) (e)
 )
 
 ;; End of file

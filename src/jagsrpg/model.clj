@@ -17,6 +17,7 @@
   (:use jls.dataflow.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
   (:use [clojure.contrib.str-utils :only (re-split str-join)])
+  (:use [clojure.contrib.seq-utils :only (seek)])
   (:use [clojure.contrib.math :only (round)]))
 
 (defn var-from-name
@@ -84,7 +85,8 @@
 (defmacro primary-stat-cost
   "Builds a cell for the cost of a primary stat"
   [stat]
-  `(cell ~'cp-cost (primary-stat-cost-table ~(var-from-name stat))))
+  (let [cost-name (symbol (str (name stat) "-cost"))]
+    `(cell ~cost-name (primary-stat-cost-table ~(var-from-name stat)))))
 
 (def build-modifier-table
      (make-table 7 [-4 -2 -1 0 1 2 4 7 11 18 23 28 38]))
@@ -139,6 +141,14 @@
   :primary-stats    ; The modifiables making the primary stats
   :model            ; The dataflow model
   :traits)          ; A ref to a collection of traits
+
+(defn get-primary-stat
+  "Get a primary stat by its symbolic name"
+  [ch name]
+  (let [stats (:primary-stats ch)
+        match (fn [m]
+                (= name (-> m :cell :name)))]
+    (seek match stats)))
   
 (defn build-character
   "Returns a jags-character"
@@ -154,6 +164,9 @@
                (primary-stat-cost phy)
                (primary-stat-cost ref)
                (primary-stat-cost int)
+               (cell cp-cost ?phy-cost)
+               (cell cp-cost ?ref-cost)
+               (cell cp-cost ?int-cost)
 
                (secondary-stat str phy)
                ; for dp calculation
@@ -161,7 +174,7 @@
                ; for damage bonus and other stuff
                (cell bld (apply + ?base-bld ?*bld-mods))
                ; This is to handle light 
-               (cell displayed-build (apply + ?bld ?*displayed-bld-mods))
+               (cell displayed-bld (apply + ?bld ?*displayed-bld-mods))
                (secondary-stat con phy)
 
                (secondary-stat cor ref)
@@ -356,7 +369,7 @@
 (def fred (build-character))
 (print-dataflow (:model fred))
 
-(def powerful ((:make (standard-secondary-stat-trait powerful str phy :increase))))
+(def powerful ((:make (standard-secondary-trait powerful str phy :increase))))
 (add-trait fred powerful)
 (remove-trait fred powerful)
 
