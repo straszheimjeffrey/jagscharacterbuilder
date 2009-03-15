@@ -227,6 +227,18 @@
                (cell armor-dr (apply + ?*armor-dr-mods))
                (cell armor-pen (apply + ?*armor-pen-mods))
 
+               (cell minor-wound-level (apply + (round (/ ?damage-points 3))
+                                                ?*minor-wound-level-mods))
+               (cell major-wound-level (apply + ?damage-points ?*major-wound-level-mods))
+               (cell critical-would-level (apply + (* 2 ?damage-points)
+                                                   ?*critical-wound-level-mods))
+
+               (cell hurt-condition (apply + (round (/ ?damage-points 3))
+                                             ?*hurt-condition-mods))
+               (cell injured-condition (apply + ?damage-points ?*injured-condition-mods))
+               (cell serious-condition (apply + (* 2 ?damage-points)
+                                                ?*serious-condition-mods))
+
                ;; Ensure the max. number of secondary stat mods are respected
                (cell :validator
                      (when (> (count ?*secondary-stat-modifier) 3)
@@ -406,38 +418,40 @@
                                           stats)))))
 
 (defmacro skill
-  [n type stats add-cells]
-  (let [roll-name (symbol (str (name n) "-roll"))
-        level-name (symbol (str (name n) "-level"))]
-    `(struct-map trait-factory
-       :name ~(make-display-name n)
-       :make (fn []
-               (let [roll# (make-modifiable ~roll-name [8 20] 12)
-                     level# (make-modifiable ~level-name [1 4] 2)
-                     cost# (cell ~'cp-cost (skill-cost ~(var-from-name roll-name)
-                                                       ~(var-from-name level-name)
-                                                       ~type
-                                                       [~@(map #(var-from-name %)
-                                                               stats)]))]
-                 (struct-map trait
-                   :name ~(make-display-name n)
-                   :modifiables [roll# level#]
-                   :cost cost#
-                   :add (fn [ch#]
-                          (do (add-modifiable ch# roll#)
-                              (add-modifiable ch# level#)
-                              (add-cells ch# (cons cost# ~add-cells))))
-                   :remove (fn [ch#]
-                             (remove-cells ch# (cons cost# ~add-cells))
-                             (remove-modifiable ch# roll#)
-                             (remove-modifiable ch# level#))))))))
+  ([n type stats] `(skill ~n ~type ~stats (fn [] nil)))
+  ([n type stats add-cells-builder]
+     (let [roll-name (symbol (str (name n) "-roll"))
+           level-name (symbol (str (name n) "-level"))]
+       `(struct-map trait-factory
+          :name ~(make-display-name n)
+          :make (fn []
+                  (let [roll# (make-modifiable ~roll-name [8 20] 12)
+                        level# (make-modifiable ~level-name [1 4] 2)
+                        cost# (cell ~'cp-cost (skill-cost ~(var-from-name roll-name)
+                                                          ~(var-from-name level-name)
+                                                          ~type
+                                                          [~@(map #(var-from-name %)
+                                                                  stats)]))
+                        ac# (~add-cells-builder)]
+                    (struct-map trait
+                      :name ~(make-display-name n)
+                      :modifiables [roll# level#]
+                      :cost cost#
+                      :add (fn [ch#]
+                             (do (add-modifiable ch# roll#)
+                                 (add-modifiable ch# level#)
+                                 (add-cells ch# (cons cost# ac#))))
+                      :remove (fn [ch#]
+                                (remove-cells ch# (cons cost# ac#))
+                                (remove-modifiable ch# roll#)
+                                (remove-modifiable ch# level#)))))))))
 
 (comment
 
 (def fred (build-character))
 (print-dataflow (:model fred))
 
-(def fighting ((:make (skill fighting :expensive [agi] nil))))
+(def fighting ((:make (skill fighting :expensive [agi]))))
 (add-trait fred fighting)
 (remove-trait fred fighting)
 
