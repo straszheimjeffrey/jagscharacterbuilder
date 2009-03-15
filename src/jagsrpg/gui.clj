@@ -188,18 +188,24 @@
                         f (seek #(= n (:name %)) factories)]
                     (when f
                       (let [trait ((:make f))
-                            q (println trait)
                             nl (label (:name trait))
                             sps (map (partial tied-spinner ch) (:modifiables trait))
                             c (tied-label (:cost trait))
                             d (JButton. "Delete")]
                         (do
+                          (add-trait ch trait)
                           (.add dp nl)
                           (doseq [s sps] (.add dp s))
-                          (when (< (count sps) 1) (.add (label "")))
                           (.add dp c)
                           (.add dp d)
-                          (add-trait ch trait)))))))))
+                          (.addActionListener d
+                               (proxy [ActionListener] []
+                                 (actionPerformed [evt]
+                                     (remove-trait ch trait)
+                                     (.remove dp nl)
+                                     (doseq [s sps] (.remove dp s))
+                                     (.remove dp c)
+                                     (.remove dp d))))))))))))
       (doto panel
         (.add (scroll list))
         (.add button)))))
