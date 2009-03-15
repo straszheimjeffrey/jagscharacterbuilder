@@ -230,7 +230,7 @@
                (cell minor-wound-level (apply + (round (/ ?damage-points 3))
                                                 ?*minor-wound-level-mods))
                (cell major-wound-level (apply + ?damage-points ?*major-wound-level-mods))
-               (cell critical-would-level (apply + (* 2 ?damage-points)
+               (cell critical-wound-level (apply + (* 2 ?damage-points)
                                                    ?*critical-wound-level-mods))
 
                (cell hurt-condition (apply + (round (/ ?damage-points 3))

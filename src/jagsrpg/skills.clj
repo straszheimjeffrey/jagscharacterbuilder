@@ -22,13 +22,13 @@
       (skill bow              :expensive [cor])
       (skill boxing           :expensive [agi]
              (fn []
-               (cell hurt-condition-mods
-                     (condp = ?boxing-level
-                              1 0
-                              2 (if (> ?boxing-roll 13) 1 0)
-                              3 2
-                              4 8))
-               (cell damage-points-mods ([0 0 1 4] (dec ?boxing-level)))))
+               [(cell hurt-condition-mods
+                      (condp = ?boxing-level
+                               1 0
+                               2 (if (>= ?boxing-roll 13) 1 0)
+                               3 2
+                               4 8))
+                (cell damage-points-mods ([0 0 1 4] (dec ?boxing-level)))]))
       (skill fencing          :expensive [agi])
       (skill firearms         :expensive [cor])
       (skill heavy-weapons    :expensive [cor])

@@ -16,6 +16,7 @@
 (ns jagsrpg.gui
   (:use jagsrpg.model)
   (:use jagsrpg.secondary)
+  (:use jagsrpg.skills)
   (:use jls.dataflow.dataflow)
   (:use [clojure.contrib.seq-utils :only (seek)]))
 
@@ -29,6 +30,7 @@
                       ListSelectionModel
                       JButton
                       JScrollPane
+                      JTabbedPane
                       SwingUtilities)
         '(java.awt.event ActionListener)
         '(javax.swing.event ChangeListener)
@@ -39,8 +41,6 @@
 (defn label
   [t]
   (JLabel. t))
-
-
 
 (defn tied-label
   "Build a swing label that tracks a stat"
@@ -63,7 +63,6 @@
 (defn tied-spinner
   "Build a spinner control that tracks a modifiable"
   [ch modifiable]
-  (println "m" modifiable)
   (let [min (-> modifiable :range first)
         max (-> modifiable :range second)
         val (-> modifiable :cell :value deref)
@@ -159,13 +158,57 @@
           (.add (tied-label ch 'armor-pen)))
         panel)))
 
-(defn top-panel
+(defn damage-panel
   [ch]
-  (let [layout (MigLayout. "wrap 1")
+  (let [layout (MigLayout. "wrap 4" "[][]5%[][]")
         panel (JPanel. layout)]
     (doto panel
-      (.add (cost-panel ch))
+      (.add (label "Normal") "sy 4, top")
+      (.add (label "0") "sy 4, top")
+      
+      (.add (label "Sub Minor"))
+      (.add (label "1"))
+      (.add (label "Minor"))
+      (.add (tied-label ch 'minor-wound-level))
+      (.add (label "Major"))
+      (.add (tied-label ch 'major-wound-level))
+      (.add (label "Critical"))
+      (.add (tied-label ch 'critical-wound-level))
+      
+      (.add (label "Hurt") "sy 3, top")
+      (.add (tied-label ch 'hurt-condition) "sy 3, top")
+      
+      (.add (label "Minor"))
+      (.add (label "1"))
+      (.add (label "Major"))
+      (.add (tied-label ch 'major-wound-level))
+      (.add (label "Critical"))
+      (.add (tied-label ch 'critical-wound-level))
+      
+      (.add (label "Injured") "sy 2, top")
+      (.add (tied-label ch 'injured-condition) "sy 2, top")
+
+      (.add (label "Major"))
+      (.add (tied-label ch 'minor-wound-level))
+      (.add (label "Critical"))
+      (.add (tied-label ch 'major-wound-level))
+
+      (.add (label "Serious") "sy 2, top")
+      (.add (tied-label ch 'serious-condition) "sy 2, top")
+      
+      (.add (label "Major"))
+      (.add (label "1"))
+      (.add (label "Critical"))
+      (.add (tied-label ch 'minor-wound-level)))))
+
+(defn top-panel
+  [ch]
+  (let [layout (MigLayout. "wrap 2")
+        panel (JPanel. layout)]
+    (doto panel
+      (.add (cost-panel ch) "sx 2")
       (.add (main-stat-panel ch))
+      (.add (damage-panel ch) "sy 2")
       (.add (derived-stat-panel ch)))))
 
 (defn scroll
@@ -175,7 +218,7 @@
 
 (defn trait-display-panel
   [ch]
-  (let [layout (MigLayout. "wrap 4")
+  (let [layout (MigLayout.)
         panel (JPanel. layout)]
     panel))
   
@@ -209,7 +252,7 @@
                           (.add dp nl)
                           (doseq [s sps] (.add dp s))
                           (.add dp c)
-                          (.add dp d)
+                          (.add dp d "wrap")
                           (.revalidate panel)
                           (.addActionListener d
                                (proxy [ActionListener] []
@@ -233,18 +276,21 @@
       (.add (scroll dp) "grow")
       (.add (trait-selection-list ch factories dp)))))
 
-
-
+(defn bottom-panel
+  [ch]
+  (doto (JTabbedPane.)
+    (.add "Secondary" (trait-panel ch secondary-traits))
+    (.add "Skills" (trait-panel ch skills))))
 
 (def character (build-character))
 
 (defn show-frame []
-  (let [layout (MigLayout. "wrap 1")
+  (let [layout (MigLayout. "fill, wrap 1")
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
       (.add (top-panel character))
-      (.add (trait-panel character secondary-traits))
+      (.add (bottom-panel character))
       (.setSize 800 600)
       (.pack)
       (.setVisible true)
