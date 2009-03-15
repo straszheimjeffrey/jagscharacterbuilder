@@ -98,14 +98,15 @@
   (if (empty? mods)
     0
     (let [sorted (reverse (sort-by (fn [[mod level]]
-                                     (- (* mod 5) level))) mods)
+                                     (- (* mod 5) level)) mods))
           [highest _] (first sorted)
           others (next sorted)
-          step (fn [_ level]
+          step (fn [[_ level]]
                  (cond
                   (= level 2) 1
                   (= level 3) 2
-                  (= level 4) 4))]
+                  (= level 4) 4
+                  :otherwise 0))]
       (apply + highest (map step others)))))
 
 (def walking-speed-table
@@ -445,6 +446,21 @@
                                 (remove-cells ch# (cons cost# ac#))
                                 (remove-modifiable ch# roll#)
                                 (remove-modifiable ch# level#)))))))))
+
+(defn compute-grapple-level
+  [n roll]
+  (if (< n 0)
+    (+ roll n)
+    n))
+
+(defmacro grapple-bonus
+  [which array skill]
+  (let [roll (var-from-name (symbol (str (name skill) "-roll")))
+        level (var-from-name (symbol (str (name skill) "-level")))
+        cell-name (symbol (str (name which) "-grapple-skill-mods"))]
+    `(cell ~cell-name (if (>= ~roll 12)
+                        [(compute-grapple-level (~array (dec ~level)) ~roll) ~level]
+                        [0 0]))))
 
 (comment
 

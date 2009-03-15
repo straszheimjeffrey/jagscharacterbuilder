@@ -302,6 +302,7 @@
   (print-dataflow (:model character))
   
   (use :reload 'jagsrpg.gui)
+  (use :reload 'jagsrpg.model)
   (use 'clojure.contrib.stacktrace) (e)
 )
 
