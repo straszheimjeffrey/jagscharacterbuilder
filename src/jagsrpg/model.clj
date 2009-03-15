@@ -303,7 +303,7 @@
     `(list (cell ~'secondary-stat-modifier (quote ~cell-name))
            (cell ~val-name (quote ~cell-name)))))
 
-(defmacro standard-secondary-stat-trait
+(defmacro standard-secondary-trait
   "A trait-factory to build a standard secondary trait modifier.
    Direction is :increase or :decrease.  If display-name is nil, it
    will equal the cell-name"

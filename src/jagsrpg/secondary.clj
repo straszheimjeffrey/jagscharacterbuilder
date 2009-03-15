@@ -35,7 +35,7 @@
       (standard-secondary-trait photographic-memory mem int :increase)
       (standard-secondary-trait forgetfull    res int  :decrease)
       (standard-secondary-trait strong-willed wil int :increase)
-      (standard-secondary-trait weak-willed   wil int :decrase)
+      (standard-secondary-trait weak-willed   wil int :decrease)
 
       (basic-secondary-trait "Puny" -5 str phy
                              (fn []
