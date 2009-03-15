@@ -3,4 +3,5 @@
 *.jar
 ant.properties
 classes/
+build/
 

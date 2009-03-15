@@ -32,7 +32,7 @@
 (defn make-display-name
   "Converts name such as fat-obese to Fat/Obese"
   [name]
-  (str-join "/" (map #(apply str (Character/toUpperCase (first %)) (next %))
+  (str-join " " (map #(apply str (Character/toUpperCase (first %)) (next %))
                      (re-split #"-" (str name)))))
 
 ;; A modifiable source cell
@@ -266,6 +266,24 @@
                  :add (fn [ch#]
                         (add-cells ch# cells#))
                  :remove (fn [ch#]
+                           (remove-cells ch# cells#)))))))
+
+(defmacro variable-trait
+  "A trait that can vary according to a source"
+  [trait-name modifiable-builder cell-builder]
+  `(struct-map trait-factory
+     :name ~trait-name
+     :make (fn []
+             (let [mod# (~modifiable-builder)
+                   cells# (~cell-builder)]
+               (struct-map trait
+                 :name ~trait-name
+                 :modifiables [mod#]
+                 :add (fn [ch#]
+                        (add-modifiable ch# mod#)
+                        (add-cells ch# cells#))
+                 :remove (fn [ch#]
+                           (remove-modifiable ch# mod#)
                            (remove-cells ch# cells#)))))))
 
 (def secondary-stat-cost-table
