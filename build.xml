@@ -1,0 +1,101 @@
+<project name="jags-builder" default="jar">
+
+  <description>
+    Pack all clojure-datalog sources into a JAR. Compile those that can
+    be compiled standalone if the clojure.jar property points us to
+    clojure.jar .
+  </description>
+
+  <property name="src" location="src"/>
+  <property name="build" location="classes"/>
+  <property name="zip-folder" location="jagsbuilder"/>
+  <property name="lib-folder" location="${zip-folder}/lib"/>
+
+  <target name="clojure.check">
+    <condition property="hasclojure">
+      <and>
+        <available file="${clojure.jar}"/>
+        <available file="${clojure-contrib.jar}"/>
+        <available file="${dataflow.jar}"/>
+      </and>
+    </condition>
+  </target>
+
+  <!-- The JAR file to create. -->
+  <property name="jarfile" location="jags-builder.jar"/>
+
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="clean" description="Remove generated files and directories.">
+    <delete file="${jarfile}"/>
+    <delete dir="${build}"/>
+  </target>
+
+  <target name="test"
+          depends="clojure.check"
+	  description = "Run tests"
+	  if="hasclojure">
+    <java classname="clojure.main">
+      <classpath>
+        <path location="${build}"/>
+        <path location="${src}"/>
+        <path location="${clojure.jar}"/>
+        <path location="${clojure-contrib.jar}"/>
+      </classpath>
+      <arg value="src/jls/dataflow/test/test.clj"/>
+    </java>
+  </target>
+
+  <target name="compile_clojure" depends="init,clojure.check"
+          description="Compile sources."
+          if="hasclojure">
+    <java classname="clojure.lang.Compile">
+      <classpath>
+        <path location="${build}"/>
+        <path location="${src}"/>
+        <path location="${clojure.jar}"/>
+        <path location="${clojure-contrib.jar}"/>
+        <path location="${dataflow.jar}"/>
+        <path location="${lib-folder}/miglayout-3.7.jar"/>
+        <path location="${lib-folder}/miglayout-3.7-swing.jar"/>
+      </classpath>
+      <sysproperty key="clojure.compile.path" value="${build}"/>
+      <arg value="jagsrpg.model"/>
+      <arg value="jagsrpg.secondary"/>
+      <arg value="jagsrpg.skills"/>
+      <arg value="jagsrpg.gui"/>
+      <arg value="jagsrpg.main"/>
+    </java>
+  </target>
+
+  <target name="jar" description="Create jar file." depends="compile_clojure">
+    <jar jarfile="${jarfile}">
+      <fileset file="epl-v10.html"/>
+      <fileset dir="${src}" includes="**/*.clj"/>
+      <fileset dir="${build}" includes="**/*.class"/>
+      <manifest>
+        <attribute name="Class-Path"
+            value=". lib/clojure.jar lib/clojure-contrib.jar lib/jls-dataflow.jar
+                   lib/miglayout-3.7-swing.jar lib/miglayout-3.7.jar"/>
+        <attribute name="Main-Class" value="jagsrpg.CharacterBuilder"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="build" description="Sets up the build directory"
+          depends="jar">
+    <copy file="${clojure.jar}" todir="${lib-folder}"/>
+    <copy file="${clojure-contrib.jar}" todir="${lib-folder}"/>
+    <copy file="${dataflow.jar}" todir="${lib-folder}"/>
+    <copy file="${jarfile}" todir="${zip-folder}"/>
+  </target>
+
+  <target name="make-zip" description="Zip the build folder"
+          depends="build">
+    <zip destfile="jagsbuilder.zip" basedir="jagsbuilder"/>
+  </target>
+
+</project>

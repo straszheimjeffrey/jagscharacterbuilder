@@ -51,7 +51,7 @@
        (do
          (add-cell-watcher
           cell
-          :key
+          (gensym "key")
           (fn [key cell old-v new-v]
             (SwingUtilities/invokeLater
              (fn []
