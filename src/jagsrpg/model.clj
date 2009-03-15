@@ -224,6 +224,9 @@
    
                (cell perception (apply + ?res ?*perception-mods))
 
+               (cell armor-dr (apply + ?*armor-dr-mods))
+               (cell armor-pen (apply + ?*armor-pen-mods))
+
                ;; Ensure the max. number of secondary stat mods are respected
                (cell :validator
                      (when (> (count ?*secondary-stat-modifier) 3)

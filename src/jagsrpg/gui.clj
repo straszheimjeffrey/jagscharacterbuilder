@@ -30,6 +30,10 @@
         '(net.miginfocom.swing MigLayout))
 
 
+(defn label
+  [t]
+  (JLabel. t))
+
 (defn tied-label
   "Build a swing label that tracks a stat"
   [ch stat]
@@ -73,7 +77,7 @@
                                          (.printStackTrace e)))))))))
     spinner))
 
-(defn main-stat-frame
+(defn main-stat-panel
   [ch]
   (let [layout (MigLayout. "wrap 9")
         panel (JPanel. layout)
@@ -81,29 +85,72 @@
                   (let [prim-mod (get-primary-stat ch prim)
                         cost-name (symbol (str (name prim) "-cost"))]
                     (doto panel
-                      (.add (JLabel. p-name) "")
-                      (.add (tied-spinner ch prim-mod) "")
-                      (.add (tied-label ch cost-name) "")
-                      (.add (JLabel. sec1-name) "")
-                      (.add (tied-label ch sec1) "")
-                      (.add (JLabel. sec2-name) "")
-                      (.add (tied-label ch sec2) "")
-                      (.add (JLabel. sec3-name) "")
-                      (.add (tied-label ch sec3) ""))))]
+                      (.add (label p-name))
+                      (.add (tied-spinner ch prim-mod))
+                      (.add (tied-label ch cost-name))
+                      (.add (label sec1-name))
+                      (.add (tied-label ch sec1))
+                      (.add (label sec2-name))
+                      (.add (tied-label ch sec2))
+                      (.add (label sec3-name))
+                      (.add (tied-label ch sec3)))))]
     (do
       (add-row "PHY" 'phy "STR" 'str "BLD" 'displayed-bld "CON" 'con)
       (add-row "REF" 'ref "COR" 'cor "REA" 'rea           "AGI" 'agi)
       (add-row "INT" 'int "RES" 'res "MEM" 'mem           "WIL" 'wil)
       panel)))
+
+(defn derived-stat-panel
+  [ch]
+  (let [layout (MigLayout. "wrap 2")
+        panel (JPanel. layout)
+        left-layout (MigLayout. "wrap 2")
+        left-panel (JPanel. left-layout)
+        right-layout (MigLayout. "wrap 2")
+        right-panel (JPanel. right-layout)]
+    (do (doto panel
+          (.add left-panel)
+          (.add right-panel))
+        (doto left-panel
+          (.add (label "DP"))
+          (.add (tied-label ch 'damage-points))
+          (.add (label "Perception"))
+          (.add (tied-label ch 'perception))
+          (.add (label "Initiative"))
+          (.add (tied-label ch 'initiative))
+          (.add (label "Speed"))
+          (.add (tied-label ch 'walking-ground-speed) "split 3")
+          (.add (tied-label ch 'running-ground-speed))
+          (.add (tied-label ch 'sprinting-ground-speed))
+          (.add (label "Base Damage"))
+          (.add (tied-label ch 'base-damage))
+          (.add (label "Grapple"))
+          (.add (tied-label ch 'offensive-grapple) "split 2")
+          (.add (tied-label ch 'defensive-grapple)))
+        (doto right-panel
+          (.add (label "Charm"))
+          (.add (tied-label ch 'charm))
+          (.add (label "Intimidate"))
+          (.add (tied-label ch 'intimidate))
+          (.add (label "Persuade"))
+          (.add (tied-label ch 'persuade))
+          (.add (label "Recruit"))
+          (.add (tied-label ch 'recruit))
+          (.add (label "Armor"))
+          (.add (tied-label ch 'armor-dr) "split 2")
+          (.add (tied-label ch 'armor-pen)))
+        panel)))
   
 
 (def character (build-character))
 
 (defn show-frame []
-  (let [frame (JFrame. "Jags Character")]
+  (let [layout (MigLayout. "wrap 1")
+        frame (JFrame. "Jags Character")]
     (doto frame
-      (.setLayout (new FlowLayout))
-      (.add (main-stat-frame character))
+      (.setLayout layout)
+      (.add (main-stat-panel character))
+      (.add (derived-stat-panel character))
       (.setSize 800 600)
       (.pack)
       (.setVisible true)
