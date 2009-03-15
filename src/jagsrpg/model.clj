@@ -372,11 +372,74 @@
                     (let [[val1# val2#] (secondary-validators ~primary ~trait-name)
                           add-cells# (~add-cells)]
                       (list* val1# val2# add-cells#))))))
-           
+
+(def expensive-skill-cost
+     (make-table 8 [1/4 1/2 1 2 3 4 5 6 12 21 29 37 45]))
+(def expensive-skill-linked-cost
+     (make-table -3 [1/2 1 2 3 4 6 11 14 19 23]))
+(def standard-skill-cost
+     (make-table 10 [1/4 1/2 1 2 3 4 5 13 21 27 35]))
+(def standard-skill-linked-cost
+     (make-table -2 [1/4 1/2 1 2 3 4 6 14 23 31]))
+(def level-cost-expensive
+     (make-table 1 [-1 0 4 16]))
+(def level-cost-standard
+     (make-table 1 [-1 0 2 12]))
+
+(defn lookup-linked-cost
+  [table roll stat]
+  (let [diff (- roll stat)]
+    (try (table diff)
+         (catch IndexOutOfBoundsException e (. java.lang.Integer MAX_VALUE)))))
+
+(defn skill-cost
+  [roll level type stats]
+  (let [[t lt l] (cond
+                  (= type :standard) [standard-skill-cost
+                                      standard-skill-linked-cost
+                                      level-cost-standard]
+                  (= type :expensive) [expensive-skill-cost
+                                       expensive-skill-linked-cost
+                                       level-cost-expensive]
+                  :default (throwf Exception "Bad skill type %s" type))]
+    (+ (l level) (apply min (t roll) (map (partial lookup-linked-cost lt roll)
+                                          stats)))))
+
+(defmacro skill
+  [n type stats add-cells]
+  (let [roll-name (symbol (str (name n) "-roll"))
+        level-name (symbol (str (name n) "-level"))]
+    `(struct-map trait-factory
+       :name ~(make-display-name n)
+       :make (fn []
+               (let [roll# (make-modifiable ~roll-name [8 20] 12)
+                     level# (make-modifiable ~level-name [1 4] 2)
+                     cost# (cell ~'cp-cost (skill-cost ~(var-from-name roll-name)
+                                                       ~(var-from-name level-name)
+                                                       ~type
+                                                       [~@(map #(var-from-name %)
+                                                               stats)]))]
+                 (struct-map trait
+                   :name ~(make-display-name n)
+                   :modifiables [roll# level#]
+                   :cost cost#
+                   :add (fn [ch#]
+                          (do (add-modifiable ch# roll#)
+                              (add-modifiable ch# level#)
+                              (add-cells ch# (cons cost# ~add-cells))))
+                   :remove (fn [ch#]
+                             (remove-cells ch# (cons cost# ~add-cells))
+                             (remove-modifiable ch# roll#)
+                             (remove-modifiable ch# level#))))))))
+
 (comment
 
 (def fred (build-character))
 (print-dataflow (:model fred))
+
+(def fighting ((:make (skill fighting :expensive [agi] nil))))
+(add-trait fred fighting)
+(remove-trait fred fighting)
 
 (def powerful ((:make (standard-secondary-trait powerful str phy :increase))))
 (add-trait fred powerful)
@@ -389,7 +452,7 @@
 (add-trait fred puny)
 (remove-trait fred puny)
 
-(update-values (:model fred) {'powerful 2})
+(update-values (:model fred) {'fighting-roll 15})
 (update-values (:model fred) {'phy 15})
 
 (use :reload 'jagsrpg.model)
