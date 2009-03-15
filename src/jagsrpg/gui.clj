@@ -16,15 +16,21 @@
 (ns jagsrpg.gui
   (:use jagsrpg.model)
   (:use jagsrpg.secondary)
-  (:use jls.dataflow.dataflow))
+  (:use jls.dataflow.dataflow)
+  (:use [clojure.contrib.seq-utils :only (seek)]))
 
 (import '(javax.swing JFrame
                       JPanel
                       JSpinner
                       SpinnerNumberModel
                       JLabel
+                      JList
+                      DefaultListModel
+                      ListSelectionModel
                       JButton
+                      JScrollPane
                       SwingUtilities)
+        '(java.awt.event ActionListener)
         '(javax.swing.event ChangeListener)
         '(java.awt FlowLayout)
         '(net.miginfocom.swing MigLayout))
@@ -140,7 +146,46 @@
           (.add (tied-label ch 'armor-dr) "split 2")
           (.add (tied-label ch 'armor-pen)))
         panel)))
+
+(defn top-panel
+  [ch]
+  (let [layout (MigLayout. "wrap 1")
+        panel (JPanel. layout)]
+    (doto panel
+      (.add (main-stat-panel ch))
+      (.add (derived-stat-panel ch)))))
+
+(defn scroll
+  [panel]
+  (let [sp (JScrollPane. panel)]
+    sp))
   
+(defn trait-selection-list
+  [ch factories]
+  (let [lm (DefaultListModel.)
+        list (JList. lm)
+        button (JButton. "Add")
+        layout (MigLayout. "wrap 1")
+        panel (JPanel. layout)]
+    (do
+      (doseq [f factories]
+        (.addElement lm (:name f)))
+      (doto list
+        (.setSelectionMode (ListSelectionModel/SINGLE_SELECTION)))
+      (doto button
+        (.addActionListener
+           (proxy [ActionListener] []
+               (actionPerformed [evt]
+                  (let [n (.getSelectedValue list)
+                        f (seek #(= n (:name %)) factories)]
+                    (when f
+                      (println ((:make f)))))))))
+      (doto panel
+        (.add (scroll list))
+        (.add button)))))
+                                         
+        
+
 
 (def character (build-character))
 
@@ -149,8 +194,8 @@
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
-      (.add (main-stat-panel character))
-      (.add (derived-stat-panel character))
+      (.add (top-panel character))
+      (.add (trait-selection-list character secondary-traits))
       (.setSize 800 600)
       (.pack)
       (.setVisible true)

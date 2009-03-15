@@ -253,6 +253,7 @@
 (defstruct trait
   :name          ; The name, a String
   :modifiables   ; A collection of modifiables
+  :cost          ; The cost cell
   :add           ; A function of one argument, to add this to a character model
   :remove)       ; The same, but removes this
 
@@ -269,16 +270,18 @@
           ((:remove tr) (:model ch))))
 
 (defmacro basic-trait
-  "Create a basic trait factory.  cell-builder is a function returning
-   a list of cells."
-  [trait-name cell-builder]
+  "Create a basic trait factory.  cost is a function returning a
+   single cell, cell-builder is a function returning a list of cells."
+  [trait-name cost-builder cell-builder]
   `(struct-map trait-factory
      :name ~trait-name
      :make (fn []
-             (let [cells# (~cell-builder)]
+             (let [cost# (~cost-builder)
+                   cells# (conj (~cell-builder) cost#)]
                (struct-map trait
                  :name ~trait-name
                  :modifiables nil
+                 :cost cost#
                  :add (fn [ch#]
                         (add-cells ch# cells#))
                  :remove (fn [ch#]
@@ -286,21 +289,23 @@
 
 (defmacro variable-trait
   "A trait that can vary according to a source"
-  [trait-name modifiable-builder cell-builder]
+  [trait-name modifiable-builder cost-builder cell-builder]
   `(struct-map trait-factory
      :name ~trait-name
      :make (fn []
              (let [mod# (~modifiable-builder)
-                   cells# (~cell-builder)]
+                   cost# (~cost-builder)
+                   cells# (conj (~cell-builder) cost#)]
                (struct-map trait
                  :name ~trait-name
                  :modifiables [mod#]
+                 :cost cost#
                  :add (fn [ch#]
                         (add-modifiable ch# mod#)
                         (add-cells ch# cells#))
                  :remove (fn [ch#]
-                           (remove-modifiable ch# mod#)
-                           (remove-cells ch# cells#)))))))
+                           (remove-cells ch# cells#)
+                           (remove-modifiable ch# mod#)))))))
 
 (def secondary-stat-cost-table
      (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
@@ -348,6 +353,7 @@
                    (struct-map trait
                      :name ~display-name
                      :modifiables [modifiable#]
+                     :cost cost-cell#
                      :add (fn [char#]
                             (add-modifiable char# modifiable#)
                             (add-cells char# cells#))
@@ -361,11 +367,11 @@
   [trait-name cost secondary primary add-cells]
   (let [val1-name (symbol (str (name primary) "-secondary-mod"))]
     `(basic-trait ~trait-name
+                  (fn [] (cell ~'cp-cost ~cost))
                   (fn []
-                    (let [cost# (cell ~'cp-cost ~cost)
-                          [val1# val2#] (secondary-validators ~primary ~trait-name)
+                    (let [[val1# val2#] (secondary-validators ~primary ~trait-name)
                           add-cells# (~add-cells)]
-                      (list* cost# val1# val2# add-cells#))))))
+                      (list* val1# val2# add-cells#))))))
            
 (comment
 
