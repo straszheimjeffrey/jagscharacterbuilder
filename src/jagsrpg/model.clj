@@ -255,6 +255,7 @@
                                      (map :validator primaries) model))
       :traits traits)))
 
+
 ;;; Traits and skills
 
 ;; A trait factory makes a trait or skill instance
@@ -319,6 +320,9 @@
                  :remove (fn [ch#]
                            (remove-cells ch# cells#)
                            (remove-modifiable ch# mod#)))))))
+
+
+;;; Secondary Traits
 
 (def secondary-stat-cost-table
      (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
@@ -385,6 +389,8 @@
                     (let [[val1# val2#] (secondary-validators ~primary ~trait-name)
                           add-cells# (~add-cells)]
                       (list* val1# val2# add-cells#))))))
+
+;;; Skills
 
 (def expensive-skill-cost
      (make-table 8 [1/4 1/2 1 2 3 4 5 6 12 21 29 37 45]))

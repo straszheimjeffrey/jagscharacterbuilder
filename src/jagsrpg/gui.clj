@@ -68,6 +68,8 @@
         val (-> modifiable :cell :value deref)
         model (SpinnerNumberModel. val min max 1)
         spinner (JSpinner. model)]
+    (when (= min max)
+      (.setEnabled spinner false))
     (.addChangeListener
               spinner
               (proxy [ChangeListener] []
