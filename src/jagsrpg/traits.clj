@@ -51,7 +51,7 @@
                                                        (if (> t 4)
                                                          (- t 4)
                                                          0)))))
-                      (fn [] [(cell damage-point-mods ?toughness)]))
+                      (fn [] [(cell damage-points-mods ?toughness)]))
       (standard-trait ugly [-2 -4])
       (cost-only-trait visible-mark -1)
       (cost-only-trait young -1)
