@@ -482,16 +482,22 @@
 
 ;;; Trait
 
-(defmacro st-trait
+(defmacro trait-base
   "Define a standard trait"
-  ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec nil))
-  ([trait-name cost-vec cells]
+  ([cost-type trait-name cost-vec]
+     `(trait-base ~cost-type ~trait-name ~cost-vec nil))
+  ([cost-type trait-name cost-vec cells]
      (let [cost-name (symcat trait-name "-cost")]
        `(variable-trait ~(make-display-name trait-name)
                         (make-modifiable ~trait-name [1 ~(count cost-vec)] 1)
-                        (cell ~'cp-cost
+                        (cell ~cost-type
                               (~cost-vec (dec ~(var-from-name trait-name))))
                         ~cells))))
+
+(defmacro st-trait
+  "Define a standard trait"
+  [& args]
+  `(trait-base ~'cp-cost ~@args))
 
 ;;;;;;
 (comment
