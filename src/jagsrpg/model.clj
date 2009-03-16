@@ -296,14 +296,14 @@
           ((:remove tr) (:model ch))))
 
 (defmacro basic-trait
-  "Create a basic trait factory.  cost is a function returning a
-   single cell, cell-builder is a function returning a list of cells."
-  [trait-name cost-builder cell-builder]
+  "Create a basic trait factory.  cost is a cell, usually defining a
+   cp-cost or ap-cost.  Cells is a collection for arbitrary cells."
+  [trait-name cost cells]
   `(struct-map trait-factory
      :name ~trait-name
      :make (fn []
-             (let [cost# (~cost-builder)
-                   cells# (conj (~cell-builder) cost#)]
+             (let [cost# ~cost
+                   cells# (conj ~cells cost#)]
                (struct-map trait
                  :name ~trait-name
                  :modifiables [(make-modifiable mod# [1 1] 1)]
@@ -314,14 +314,14 @@
                            (remove-cells ch# cells#)))))))
 
 (defmacro variable-trait
-  "A trait that can vary according to a source"
-  [trait-name modifiable-builder cost-builder cell-builder]
+  "A trait that can vary according to a source."
+  [trait-name modifiable cost cells]
   `(struct-map trait-factory
      :name ~trait-name
      :make (fn []
-             (let [mod# (~modifiable-builder)
-                   cost# (~cost-builder)
-                   cells# (conj (~cell-builder) cost#)]
+             (let [mod# ~modifiable
+                   cost# ~cost
+                   cells# (conj ~cells cost#)]
                (struct-map trait
                  :name ~trait-name
                  :modifiables [mod#]
@@ -393,14 +393,13 @@
 (defmacro basic-secondary-trait
   "Create a basic secondary trait.  Add cells, is a function returning
    additional cells."
-  [trait-name cost secondary primary add-cells]
+  [trait-name cost secondary primary cells]
   (let [val1-name (symcat primary "-secondary-mod")]
     `(basic-trait ~trait-name
-                  (fn [] (cell ~'cp-cost ~cost))
-                  (fn []
-                    (let [[val1# val2#] (secondary-validators ~primary ~trait-name)
-                          add-cells# (~add-cells)]
-                      (list* val1# val2# add-cells#))))))
+                  (cell ~'cp-cost ~cost)
+                  (let [[val1# val2#] (secondary-validators ~primary ~trait-name)]
+                    (list* val1# val2# ~cells)))))
+
 
 ;;; Skills
 
@@ -437,8 +436,8 @@
                                           stats)))))
 
 (defmacro skill
-  ([n type stats] `(skill ~n ~type ~stats (fn [] nil)))
-  ([n type stats add-cells-builder]
+  ([n type stats] `(skill ~n ~type ~stats nil))
+  ([n type stats cells]
      (let [roll-name (symcat n "-roll")
            level-name (symcat n "-level")]
        `(struct-map trait-factory
@@ -451,7 +450,7 @@
                                                           ~type
                                                           [~@(map #(var-from-name %)
                                                                   stats)]))
-                        ac# (~add-cells-builder)]
+                        ac# (conj ~cells cost#)]
                     (struct-map trait
                       :name ~(make-display-name n)
                       :modifiables [roll# level#]
@@ -459,9 +458,9 @@
                       :add (fn [ch#]
                              (do (add-modifiable ch# roll#)
                                  (add-modifiable ch# level#)
-                                 (add-cells ch# (cons cost# ac#))))
+                                 (add-cells ch# ac#)))
                       :remove (fn [ch#]
-                                (remove-cells ch# (cons cost# ac#))
+                                (remove-cells ch# ac# cost#)
                                 (remove-modifiable ch# roll#)
                                 (remove-modifiable ch# level#)))))))))
 
@@ -483,22 +482,16 @@
 
 ;;; Trait
 
-(defmacro cost-only-trait
-  ([trait-name cost] `(cost-only-trait ~trait-name ~cost (fn [] nil)))
-  ([trait-name cost cell-builder]
-     `(basic-trait ~(make-display-name trait-name)
-                   (fn [] (cell ~'cp-cost ~cost))
-                   ~cell-builder)))
-
-(defmacro standard-trait
-  ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec (fn [] nil)))
-  ([trait-name cost-vec cell-builder]
+(defmacro st-trait
+  "Define a standard trait"
+  ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec nil))
+  ([trait-name cost-vec cells]
      (let [cost-name (symcat trait-name "-cost")]
        `(variable-trait ~(make-display-name trait-name)
-                        (fn [] (make-modifiable ~trait-name [1 ~(count cost-vec)] 1))
-                        (fn [] (cell ~'cp-cost
-                                     (~cost-vec (dec ~(var-from-name trait-name)))))
-                        ~cell-builder))))
+                        (make-modifiable ~trait-name [1 ~(count cost-vec)] 1)
+                        (cell ~'cp-cost
+                              (~cost-vec (dec ~(var-from-name trait-name))))
+                        ~cells))))
 
 ;;;;;;
 (comment

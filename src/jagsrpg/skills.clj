@@ -21,42 +21,37 @@
      [(skill acrobatics       :expensive [agi])
       (skill bow              :expensive [cor])
       (skill boxing           :expensive [agi]
-             (fn []
-               [(cell hurt-condition-mods
-                      (condp = ?boxing-level
-                               1 0
-                               2 (if (>= ?boxing-roll 13) 1 0)
-                               3 2
-                               4 8))
-                (cell damage-points-mods ([0 0 1 4] (dec ?boxing-level)))]))
+             [(cell hurt-condition-mods
+                    (condp = ?boxing-level
+                             1 0
+                             2 (if (>= ?boxing-roll 13) 1 0)
+                             3 2
+                             4 8))
+              (cell damage-points-mods ([0 0 1 4] (dec ?boxing-level)))])
       (skill fencing          :expensive [agi])
       (skill firearms         :expensive [cor])
       (skill heavy-weapons    :expensive [cor])
       (skill jujitsu          :expensive [agi]
-             (fn []
-               [(grapple-bonus offensive [1 2 4 -9] jujitsu)
-                (grapple-bonus defensive [1 2 4 -9] jujitsu)]))
+             [(grapple-bonus offensive [1 2 4 -9] jujitsu)
+              (grapple-bonus defensive [1 2 4 -9] jujitsu)])
       (skill karate           :expensive [agi])
       (skill knife-fighting   :expensive [agi])
       (skill kung-fu          :expensive [agi])
       (skill melee-weapons    :expensive [agi]) 
       (skill staff            :expensive [agi])
       (skill streetfighting   :expensive [agi]
-             (fn []
-               [(grapple-bonus offensive [1 2 3 -9] streetfighting)
-                (grapple-bonus defensive [0 1 2 -12] streetfighting)]))
+             [(grapple-bonus offensive [1 2 3 -9] streetfighting)
+              (grapple-bonus defensive [0 1 2 -12] streetfighting)])
       (skill tae-kwon-do      :expensive [agi])
       (skill tai-chi          :expensive [agi]
-             (fn []
-               [(grapple-bonus offensive [0 1 2 -10] tai-chi)
-                (grapple-bonus defensive [1 2 4 -7] tai-chi)]))
+             [(grapple-bonus offensive [0 1 2 -10] tai-chi)
+              (grapple-bonus defensive [1 2 4 -7] tai-chi)])
       (skill tangle-weapons   :expensive [cor])
       (skill thrown-knife     :expensive [cor])
       (skill thrown-weapons   :expensive [cor])
       (skill wrestling        :expensive [agi]
-             (fn []
-               [(grapple-bonus offensive [2 3 5 -8] wrestling)
-                (grapple-bonus defensive [2 3 5 -8] wrestling)]))
+             [(grapple-bonus offensive [2 3 5 -8] wrestling)
+              (grapple-bonus defensive [2 3 5 -8] wrestling)])
       (skill astrophysics     :expensive [res])
       (skill bio-sciences     :expensive [res])
       (skill chemist          :expensive [res])

@@ -38,48 +38,37 @@
       (standard-secondary-trait weak-willed   wil int :decrease)
 
       (basic-secondary-trait "Puny" -5 str phy
-                             (fn []
-                               [(cell str-mods (- 8 ?phy))]))
+                             [(cell str-mods (- 8 ?phy))])
       (basic-secondary-trait "Emaciated" -5 bld phy
-                             (fn []
-                               [(cell bld-mods (- 7 ?phy))
-                                (cell damage-point-mods -4)]))
+                             [(cell bld-mods (- 7 ?phy))
+                              (cell damage-point-mods -4)])
       (basic-secondary-trait "Fragile" -7 con phy
-                             (fn []
-                               [(cell con-mods (- 7 ?phy))]))
+                             [(cell con-mods (- 7 ?phy))])
       (basic-secondary-trait "Crippled Hands" -6 cor ref
-                             (fn []
-                               [(cell cor-mods (- 7 ?ref))]))
+                             [(cell cor-mods (- 7 ?ref))])
       (basic-secondary-trait "Sluggish" -7 rea ref
-                             (fn []
-                               [(cell rea-mods (- 7 ?ref))]))
+                             [(cell rea-mods (- 7 ?ref))])
       (basic-secondary-trait "Uncoordinated" -8 agi ref
-                             (fn []
-                               [(cell agi-mods (- 7 ?ref))]))
-      (basic-secondary-trait "Clueless" -4 res int
-                             (fn [] nil))
+                             [(cell agi-mods (- 7 ?ref))])
+      (basic-secondary-trait "Clueless" -4 res int nil)
       (basic-secondary-trait "Retarded" -5 res int
-                             (fn []
-                               [(cell res-mods (- 7 ?int))]))
+                             [(cell res-mods (- 7 ?int))])
       (basic-secondary-trait "Empty Headed" -7 mem int
-                             (fn []
-                               [(cell mem-mods (- 7 ?int))]))
-      (basic-secondary-trait "Wishy Washy" -4 wil int
-                             (fn [] []))
+                             [(cell mem-mods (- 7 ?int))])
+      (basic-secondary-trait "Wishy Washy" -4 wil int nil)
       (basic-secondary-trait "Weak Minded" -5 wil int
-                             (fn []
-                               [(cell wil-mods (- 7 ?int))]))
+                             [(cell wil-mods (- 7 ?int))])
 
       (variable-trait "Light/Short"
-                      (fn [] (make-modifiable light-short [1 3] 1))
-                      (fn [] (cell cp-cost 0))
-                      (fn [] [(cell displayed-bld-mods (* -1 ?light-short))]))
+                      (make-modifiable light-short [1 3] 1)
+                      (cell cp-cost 0)
+                      [(cell displayed-bld-mods (* -1 ?light-short))])
       (variable-trait "Fat/Obese"
-                   (fn [] (make-modifiable fat-obese [1 2] 1))
-                   (fn [] (cell cp-cost ([-3 -5] (dec ?fat-obese))))
-                   (fn [] [(cell bld-mods ([3 8] (dec ?fat-obese)))
-                           (cell damage-points-mods ([1 3] (dec ?fat-obese)))
-                           (cell agi-mods ([0 -2] (dec ?fat-obese)))]))
+                      (make-modifiable fat-obese [1 2] 1)
+                      (cell cp-cost ([-3 -5] (dec ?fat-obese)))
+                      [(cell bld-mods ([3 8] (dec ?fat-obese)))
+                       (cell damage-points-mods ([1 3] (dec ?fat-obese)))
+                       (cell agi-mods ([0 -2] (dec ?fat-obese)))])
       (variable-trait "Ill"
                       (fn [] (make-modifiable ill [1 3] 1))
                       (fn [] (cell cp-cost ([-1 -3 -5] (dec ?ill))))
@@ -87,12 +76,6 @@
 
 (comment
 
-(macroexpand '(variable-trait "Light/Short"
-                              (fn [] (make-modifiable light-short [1 3] 1))
-                              (fn [] (cell 'cp-cost 0))
-                              (fn [] [(cell displayed-bld-mods (* -1 ?light-short))])))
-
-((fn [] (cell (quote cp-cost) 0)))
 
 (use :reload 'jagsrpg.secondary)
 (use :reload 'jagsrpg.model)
