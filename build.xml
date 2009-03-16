@@ -91,6 +91,9 @@
     <copy file="${clojure-contrib.jar}" todir="${lib-folder}"/>
     <copy file="${dataflow.jar}" todir="${lib-folder}"/>
     <copy file="${jarfile}" todir="${zip-folder}"/>
+    <copy todir="${zip-folder}/src">
+      <fileset dir="${src}"/>
+    </copy>
   </target>
 
   <target name="make-zip" description="Zip the build folder"

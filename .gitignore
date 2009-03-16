@@ -3,6 +3,6 @@
 *.jar
 ant.properties
 classes/
-build/
+jagsbuilder/
 jagsbuilder.zip
 
