@@ -187,7 +187,7 @@
                (secondary-stat wil int)
 
                ; for artistic genius
-               (cell mem-for-art (apply ?res ?*mem-for-art-mods))
+               (cell mem-for-art (apply + ?res ?*mem-for-art-mods))
 
                (cell base-damage
                      (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))

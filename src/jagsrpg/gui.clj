@@ -17,6 +17,7 @@
   (:use jagsrpg.model)
   (:use jagsrpg.secondary)
   (:use jagsrpg.skills)
+  (:use jagsrpg.traits)
   (:use jls.dataflow.dataflow)
   (:use [clojure.contrib.seq-utils :only (seek)]))
 
@@ -282,7 +283,8 @@
   [ch]
   (doto (JTabbedPane.)
     (.add "Secondary" (trait-panel ch secondary-traits))
-    (.add "Skills" (trait-panel ch skills))))
+    (.add "Skills" (trait-panel ch skills))
+    (.add "Traits" (trait-panel ch standard-traits))))
 
 (def character (build-character))
 
