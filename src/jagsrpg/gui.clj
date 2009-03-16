@@ -18,7 +18,7 @@
   (:use jagsrpg.secondary)
   (:use jagsrpg.skills)
   (:use jagsrpg.traits)
-  (:use jls.dataflow.dataflow)
+  (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (seek)]))
 
 (import '(javax.swing JFrame

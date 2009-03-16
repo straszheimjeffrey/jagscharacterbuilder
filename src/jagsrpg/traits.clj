@@ -15,7 +15,7 @@
 
 (ns jagsrpg.traits
   (:use jagsrpg.model)
-  (:use jls.dataflow.dataflow))
+  (:use clojure.contrib.dataflow))
 
 
 (def standard-traits

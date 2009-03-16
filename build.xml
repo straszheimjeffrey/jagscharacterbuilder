@@ -16,7 +16,6 @@
       <and>
         <available file="${clojure.jar}"/>
         <available file="${clojure-contrib.jar}"/>
-        <available file="${dataflow.jar}"/>
       </and>
     </condition>
   </target>
@@ -34,21 +33,6 @@
     <delete dir="${build}"/>
   </target>
 
-  <target name="test"
-          depends="clojure.check"
-	  description = "Run tests"
-	  if="hasclojure">
-    <java classname="clojure.main">
-      <classpath>
-        <path location="${build}"/>
-        <path location="${src}"/>
-        <path location="${clojure.jar}"/>
-        <path location="${clojure-contrib.jar}"/>
-      </classpath>
-      <arg value="src/jls/dataflow/test/test.clj"/>
-    </java>
-  </target>
-
   <target name="compile_clojure" depends="init,clojure.check"
           description="Compile sources."
           if="hasclojure">
@@ -58,7 +42,6 @@
         <path location="${src}"/>
         <path location="${clojure.jar}"/>
         <path location="${clojure-contrib.jar}"/>
-        <path location="${dataflow.jar}"/>
         <path location="${lib-folder}/miglayout-3.7.jar"/>
         <path location="${lib-folder}/miglayout-3.7-swing.jar"/>
       </classpath>
@@ -66,6 +49,7 @@
       <arg value="jagsrpg.model"/>
       <arg value="jagsrpg.secondary"/>
       <arg value="jagsrpg.skills"/>
+      <arg value="jagsrpg.traits"/>
       <arg value="jagsrpg.gui"/>
       <arg value="jagsrpg.main"/>
     </java>
@@ -78,7 +62,7 @@
       <fileset dir="${build}" includes="**/*.class"/>
       <manifest>
         <attribute name="Class-Path"
-            value=". lib/clojure.jar lib/clojure-contrib.jar lib/jls-dataflow.jar
+            value=". lib/clojure.jar lib/clojure-contrib.jar
                    lib/miglayout-3.7-swing.jar lib/miglayout-3.7.jar"/>
         <attribute name="Main-Class" value="jagsrpg.CharacterBuilder"/>
       </manifest>
@@ -89,7 +73,6 @@
           depends="jar">
     <copy file="${clojure.jar}" todir="${lib-folder}"/>
     <copy file="${clojure-contrib.jar}" todir="${lib-folder}"/>
-    <copy file="${dataflow.jar}" todir="${lib-folder}"/>
     <copy file="${jarfile}" todir="${zip-folder}"/>
     <copy todir="${zip-folder}/src">
       <fileset dir="${src}"/>

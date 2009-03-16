@@ -15,7 +15,7 @@
 
 (ns jagsrpg.skills
   (:use jagsrpg.model)
-  (:use jls.dataflow.dataflow))
+  (:use clojure.contrib.dataflow))
 
 (def skills
      [(skill acrobatics       :expensive [agi])

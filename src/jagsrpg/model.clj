@@ -14,7 +14,7 @@
 ;;  Created 14 March 2009
 
 (ns jagsrpg.model
-  (:use jls.dataflow.dataflow)
+  (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
   (:use [clojure.contrib.str-utils :only (re-split str-join)])
   (:use [clojure.contrib.seq-utils :only (seek)])
@@ -519,7 +519,6 @@
 (update-values (:model fred) {'phy 15})
 
 (use :reload 'jagsrpg.model)
-(use :reload 'jls.dataflow.dataflow)
 (use 'clojure.contrib.stacktrace) (e)
 (use 'clojure.contrib.trace)
 )

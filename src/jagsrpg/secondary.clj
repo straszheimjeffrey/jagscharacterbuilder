@@ -15,7 +15,7 @@
 
 (ns jagsrpg.secondary
   (:use jagsrpg.model)
-  (:use jls.dataflow.dataflow))
+  (:use clojure.contrib.dataflow))
 
 (def secondary-traits
      [(standard-secondary-trait powerful      str phy :increase)
