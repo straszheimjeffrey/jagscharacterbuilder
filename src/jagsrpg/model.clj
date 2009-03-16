@@ -499,6 +499,11 @@
   [& args]
   `(trait-base ~'cp-cost ~@args))
 
+(defmacro ar-trait
+  "Define an archetype trait"
+  [& args]
+  `(trait-base ~'ap-cost ~@args))
+
 ;;;;;;
 (comment
 
