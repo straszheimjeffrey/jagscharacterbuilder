@@ -288,12 +288,12 @@
    single cell, cell-builder is a function returning a list of cells."
   [trait-name cost-builder cell-builder]
   `(struct-map trait-factory
-     :name ~trait-name
+     :name ~(str trait-name)
      :make (fn []
              (let [cost# (~cost-builder)
                    cells# (conj (~cell-builder) cost#)]
                (struct-map trait
-                 :name ~trait-name
+                 :name ~(str trait-name)
                  :modifiables [(make-modifiable mod# [1 1] 1)]
                  :cost cost#
                  :add (fn [ch#]
@@ -467,6 +467,26 @@
     `(cell ~cell-name (if (>= ~roll 12)
                         [(compute-grapple-level (~array (dec ~level)) ~roll) ~level]
                         [0 0]))))
+
+
+;;; Trait
+
+(defmacro cost-only-trait
+  [trait-name cost]
+  `(basic-trait ~trait-name
+                (fn [] (cell ~'cp-cost ~cost))
+                (fn [] nil)))
+
+(defmacro standard-trait
+  ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec (fn [] [])))
+  ([trait-name cost-vec cell-builder]
+     (let [cost-name (symbol (str (name trait-name) "-cost"))]
+       `(variable-trait ~trait-name
+                        (fn [] (make-modifiable ~trait-name [1 ~(count cost-vec)] 1))
+                        (fn [] (cell ~'cp-cost
+                                     (~cost-vec (dec ~(var-from-name trait-name)))))
+                        cell-builder))))
+
 
 (comment
 
