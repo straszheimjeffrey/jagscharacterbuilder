@@ -460,7 +460,7 @@
                                  (add-modifiable ch# level#)
                                  (add-cells ch# ac#)))
                       :remove (fn [ch#]
-                                (remove-cells ch# ac# cost#)
+                                (remove-cells ch# ac#)
                                 (remove-modifiable ch# roll#)
                                 (remove-modifiable ch# level#)))))))))
 
