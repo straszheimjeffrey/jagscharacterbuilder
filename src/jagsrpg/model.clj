@@ -20,18 +20,24 @@
   (:use [clojure.contrib.seq-utils :only (seek)])
   (:use [clojure.contrib.math :only (round)]))
 
+
+(defn symcat
+  "String concats the arguments together to form a symbol"
+  [& args]
+  (symbol (apply str args)))
+
 (defn var-from-name
   "Given a symbol x, return ?x"
   [symb]
-  (symbol (str "?" (name symb))))
+  (symcat "?" symb))
 
 (defn col-from-name
   "Given a symbol x, return ?*x"
   [symb]
-  (symbol (str "?*" (name symb))))
+  (symcat "?*" symb))
 
 (defn make-display-name
-  "Converts name such as fat-obese to Fat/Obese"
+  "Converts name such as fat-obese to Fat Obese"
   [name]
   (str-join " " (map #(apply str (Character/toUpperCase (first %)) (next %))
                      (re-split #"-" (str name)))))
@@ -71,7 +77,7 @@
   "Builds a secondary stat"
   [stat primary]
   (let [n (name stat)
-        mods (symbol (str n "-mods"))]
+        mods (symcat n "-mods")]
     `(cell ~stat (apply + ~(var-from-name primary) ~(col-from-name mods)))))
 
 (defn make-table
@@ -85,7 +91,7 @@
 (defmacro primary-stat-cost
   "Builds a cell for the cost of a primary stat"
   [stat]
-  (let [cost-name (symbol (str (name stat) "-cost"))]
+  (let [cost-name (symcat stat "-cost")]
     `(cell ~cost-name (primary-stat-cost-table ~(var-from-name stat)))))
 
 (def build-modifier-table
@@ -131,7 +137,7 @@
   "Ensure that the primary stat has only one secondary modified"
   [stat]
   (let [n (name stat)
-        symb (symbol (str n "-secondary-mod"))]
+        symb (symcat n "-secondary-mod")]
     `(cell :validator
            (when (> (count ~(col-from-name symb)) 1)
              (throwf Exception
@@ -343,7 +349,7 @@
 (defmacro secondary-validators
   "Create the secondary validation cells"
   [prim cell-name]
-  (let [val-name (symbol (str (name prim) "-secondary-mod"))]
+  (let [val-name (symcat prim "-secondary-mod")]
     `(list (cell ~'secondary-stat-modifier (quote ~cell-name))
            (cell ~val-name (quote ~cell-name)))))
 
@@ -357,7 +363,7 @@
                     (= direction :increase) 1
                     (= direction :decrease) -1
                     :otherwise (throwf Exception "Bad direction %s" (str :direction)))
-        modifier-name (symbol (str (name secondary) "-mods"))]
+        modifier-name (symcat secondary "-mods")]
     `(struct-map trait-factory
          :name ~display-name
          :make (fn []
@@ -388,7 +394,7 @@
   "Create a basic secondary trait.  Add cells, is a function returning
    additional cells."
   [trait-name cost secondary primary add-cells]
-  (let [val1-name (symbol (str (name primary) "-secondary-mod"))]
+  (let [val1-name (symcat primary "-secondary-mod")]
     `(basic-trait ~trait-name
                   (fn [] (cell ~'cp-cost ~cost))
                   (fn []
@@ -433,8 +439,8 @@
 (defmacro skill
   ([n type stats] `(skill ~n ~type ~stats (fn [] nil)))
   ([n type stats add-cells-builder]
-     (let [roll-name (symbol (str (name n) "-roll"))
-           level-name (symbol (str (name n) "-level"))]
+     (let [roll-name (symcat n "-roll")
+           level-name (symcat n "-level")]
        `(struct-map trait-factory
           :name ~(make-display-name n)
           :make (fn []
@@ -467,9 +473,9 @@
 
 (defmacro grapple-bonus
   [which array skill]
-  (let [roll (var-from-name (symbol (str (name skill) "-roll")))
-        level (var-from-name (symbol (str (name skill) "-level")))
-        cell-name (symbol (str (name which) "-grapple-skill-mods"))]
+  (let [roll (var-from-name (symcat skill "-roll"))
+        level (var-from-name (symcat skill "-level"))
+        cell-name (symcat which "-grapple-skill-mods")]
     `(cell ~cell-name (if (>= ~roll 12)
                         [(compute-grapple-level (~array (dec ~level)) ~roll) ~level]
                         [0 0]))))
@@ -487,7 +493,7 @@
 (defmacro standard-trait
   ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec (fn [] nil)))
   ([trait-name cost-vec cell-builder]
-     (let [cost-name (symbol (str (name trait-name) "-cost"))]
+     (let [cost-name (symcat trait-name "-cost")]
        `(variable-trait ~(make-display-name trait-name)
                         (fn [] (make-modifiable ~trait-name [1 ~(count cost-vec)] 1))
                         (fn [] (cell ~'cp-cost

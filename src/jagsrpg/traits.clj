@@ -46,7 +46,7 @@
       (standard-trait peg-legged [-1 -4])
       (variable-trait "Toughness"
                       (fn [] (make-modifiable toughness [1 9999] 1))
-                      (fn [] (cell toughness-cost (let [t ?toughness]
+                      (fn [] (cell cp-cost (let [t ?toughness]
                                                     (+ t
                                                        (if (> t 4)
                                                          (- t 4)
