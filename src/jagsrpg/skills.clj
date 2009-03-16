@@ -91,7 +91,7 @@
       (skill occult-knowlege  :standard  [mem])
       (skill philosophy       :standard  [res])
       (skill phychology       :standard  [res])
-      (skill art              :standard  [cor mem])
+      (skill art              :standard  [cor mem-for-art]) ; see artistic-genius
       (skill business-admin   :standard  [res])
       (skill craft-skills     :standard  [cor mem])
       (skill musical-skills   :standard  [mem cor])

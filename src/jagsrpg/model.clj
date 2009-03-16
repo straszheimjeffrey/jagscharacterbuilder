@@ -186,6 +186,9 @@
                (secondary-stat mem int)
                (secondary-stat wil int)
 
+               ; for artistic genius
+               (cell mem-for-art (apply ?res ?*mem-for-art-mods))
+
                (cell base-damage
                      (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
                (cell hand-to-hand-damage
@@ -212,14 +215,17 @@
                (cell offensive-grapple-mods
                      (compute-grapple-mod ?*offensive-grapple-skill-mods))
 
+               (cell rea-for-speed (apply + ?rea ?*rea-for-speed-mods))
+
                (cell walking-ground-speed
-                     (apply + (compute-walking-speed ?rea) ?*walking-ground-speed-mods))
+                     (apply + (compute-walking-speed ?rea-for-speed)
+                              ?*walking-ground-speed-mods))
                (cell running-ground-speed
-                     (apply + (compute-running-speed ?rea) ?*running-ground-speed-mods))
+                     (apply + (compute-running-speed ?rea-for-speed)
+                              ?*running-ground-speed-mods))
                (cell sprinting-ground-speed
-                     (apply +
-                            (compute-sprinting-speed ?rea)
-                            ?*sprinting-ground-speed-mods))
+                     (apply + (compute-sprinting-speed ?rea-for-speed)
+                              ?*sprinting-ground-speed-mods))
 
                (cell initiative (apply + ?rea ?*initiative-mods))
    
@@ -288,12 +294,12 @@
    single cell, cell-builder is a function returning a list of cells."
   [trait-name cost-builder cell-builder]
   `(struct-map trait-factory
-     :name ~(str trait-name)
+     :name ~trait-name
      :make (fn []
              (let [cost# (~cost-builder)
                    cells# (conj (~cell-builder) cost#)]
                (struct-map trait
-                 :name ~(str trait-name)
+                 :name ~trait-name
                  :modifiables [(make-modifiable mod# [1 1] 1)]
                  :cost cost#
                  :add (fn [ch#]
@@ -472,22 +478,23 @@
 ;;; Trait
 
 (defmacro cost-only-trait
-  [trait-name cost]
-  `(basic-trait ~trait-name
-                (fn [] (cell ~'cp-cost ~cost))
-                (fn [] nil)))
+  ([trait-name cost] `(cost-only-trait ~trait-name ~cost (fn [] nil)))
+  ([trait-name cost cell-builder]
+     `(basic-trait ~(make-display-name trait-name)
+                   (fn [] (cell ~'cp-cost ~cost))
+                   ~cell-builder)))
 
 (defmacro standard-trait
-  ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec (fn [] [])))
+  ([trait-name cost-vec] `(standard-trait ~trait-name ~cost-vec (fn [] nil)))
   ([trait-name cost-vec cell-builder]
      (let [cost-name (symbol (str (name trait-name) "-cost"))]
-       `(variable-trait ~trait-name
+       `(variable-trait ~(make-display-name trait-name)
                         (fn [] (make-modifiable ~trait-name [1 ~(count cost-vec)] 1))
                         (fn [] (cell ~'cp-cost
                                      (~cost-vec (dec ~(var-from-name trait-name)))))
-                        cell-builder))))
+                        ~cell-builder))))
 
-
+;;;;;;
 (comment
 
 (def fred (build-character))
