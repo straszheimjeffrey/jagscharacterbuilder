@@ -331,10 +331,10 @@
           (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
             (let [n (read r)
                   nch (deserialize-character n)]
-              (if (= old (serialize-character ch))
-               ; (do (add-character-to-frame fr nch)
-               ;     (.pack fr))
-                (show-frame nch)))))))))
+                                        ; (if (= old (serialize-character ch))
+                                        ; (do (add-character-to-frame fr nch)
+                                        ;     (.pack fr))
+                (show-frame nch))))))))
               
 
 (defn save-character

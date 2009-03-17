@@ -52,6 +52,7 @@
       <arg value="jagsrpg.traits"/>
       <arg value="jagsrpg.archetype"/>
       <arg value="jagsrpg.gui"/>
+      <arg value="jagsrpg.serialize"/>
       <arg value="jagsrpg.main"/>
     </java>
   </target>
