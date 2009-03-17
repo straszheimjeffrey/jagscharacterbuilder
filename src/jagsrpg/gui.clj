@@ -32,9 +32,14 @@
                       DefaultListModel
                       ListSelectionModel
                       JButton
+                      JMenuBar
+                      JMenu
+                      JMenuItem
                       JScrollPane
                       JTabbedPane
+                      JFileChooser
                       SwingUtilities)
+        '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener)
         '(javax.swing.event ChangeListener)
         '(java.awt FlowLayout)
@@ -301,12 +306,68 @@
           (.add (bottom-panel ch)))
         (.pack fr))))
 
+(declare show-frame)
+
+(def file-filter (proxy [FileFilter] []
+                  (accept [f]
+                          (.matches (.getName f) ".*\\.jags$"))
+                  (getDescription [] "JAGS Characters")))
+
+(defn new-character
+  [fr ch]
+  (show-frame (build-character)))
+
+(defn open-character
+  [fr ch old]
+  (let [chooser (JFileChooser.)]
+    (do
+      (.setFileFilter chooser file-filter)
+      (let [result (.showOpenDialog chooser fr)]
+        (when (= result JFileChooser/APPROVE_OPTION)
+          (println "open char"))))))
+
+(defn save-character
+  [fr ch]
+  (let [chooser (JFileChooser.)]
+    (.setFileFilter chooser file-filter)
+    (let [result (.showSaveDialog chooser fr)]
+      (when (= result JFileChooser/APPROVE_OPTION)
+        (println "save char")))))
+
+(defn add-menu-bar
+  [fr ch]
+  (let [bar (JMenuBar.)
+        file (JMenu. "File")
+        menu-new (JMenuItem. "New")
+        menu-open (JMenuItem. "Open")
+        menu-save (JMenuItem. "Save")
+        old (serialize-character ch)]
+    (do
+      (.addActionListener menu-new
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                            (new-character fr ch))))
+      (.addActionListener menu-open
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                            (open-character fr ch old))))
+      (.addActionListener menu-save
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                            (save-character fr ch))))
+      (.add bar file)
+      (.add file menu-new)
+      (.add file menu-open)
+      (.add file menu-save)
+      (.setJMenuBar fr bar))))
+        
 (defn show-frame
   [ch]
   (let [layout (MigLayout. "fill, wrap 1")
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
+      (add-menu-bar ch)
       (add-character-to-frame ch)
       (.setVisible true)
       (.show))))
