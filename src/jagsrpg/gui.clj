@@ -21,9 +21,13 @@
   (:use jagsrpg.archetype)
   (:use jagsrpg.serialize)
   (:use clojure.contrib.dataflow)
-  (:use [clojure.contrib.seq-utils :only (seek)]))
+  (:use [clojure.contrib.seq-utils :only (seek)])
+  (:use [clojure.contrib.duck-streams :only (writer)]))
 
-(import '(javax.swing JFrame
+(import '(java.io File
+                  FileReader
+                  PushbackReader)
+        '(javax.swing JFrame
                       JPanel
                       JSpinner
                       SpinnerNumberModel
@@ -324,15 +328,28 @@
       (.setFileFilter chooser file-filter)
       (let [result (.showOpenDialog chooser fr)]
         (when (= result JFileChooser/APPROVE_OPTION)
-          (println "open char"))))))
+          (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
+            (let [n (read r)
+                  nch (deserialize-character n)]
+              (if (= old (serialize-character ch))
+               ; (do (add-character-to-frame fr nch)
+               ;     (.pack fr))
+                (show-frame nch)))))))))
+              
 
 (defn save-character
   [fr ch]
   (let [chooser (JFileChooser.)]
     (.setFileFilter chooser file-filter)
-    (let [result (.showSaveDialog chooser fr)]
+    (let [result (.showSaveDialog chooser fr)
+          fix-name (fn [n]
+                     (if (.accept file-filter n)
+                       n
+                       (File. (str (.getPath n) ".jags"))))]
       (when (= result JFileChooser/APPROVE_OPTION)
-        (println "save char")))))
+        (with-open [w (writer (fix-name (.getSelectedFile chooser)))]
+          (binding [*out* w]
+            (pr (serialize-character ch))))))))
 
 (defn add-menu-bar
   [fr ch]
