@@ -278,6 +278,7 @@
 ;; A trait
 (defstruct trait
   :name          ; The name, a String
+  :type          ; Such as :secondary, :trait, :archetype, or :skill
   :modifiables   ; A collection of modifiables
   :cost          ; The cost cell
   :add           ; A function of one argument, to add this to a character model
@@ -298,7 +299,7 @@
 (defmacro basic-trait
   "Create a basic trait factory.  cost is a cell, usually defining a
    cp-cost or ap-cost.  Cells is a collection for arbitrary cells."
-  [trait-name cost cells]
+  [trait-name type cost cells]
   `(struct-map trait-factory
      :name ~trait-name
      :make (fn []
@@ -306,6 +307,7 @@
                    cells# (conj ~cells cost#)]
                (struct-map trait
                  :name ~trait-name
+                 :type ~type
                  :modifiables [(make-modifiable mod# [1 1] 1)]
                  :cost cost#
                  :add (fn [ch#]
@@ -315,7 +317,7 @@
 
 (defmacro variable-trait
   "A trait that can vary according to a source."
-  [trait-name modifiable cost cells]
+  [trait-name type modifiable cost cells]
   `(struct-map trait-factory
      :name ~trait-name
      :make (fn []
@@ -324,6 +326,7 @@
                    cells# (conj ~cells cost#)]
                (struct-map trait
                  :name ~trait-name
+                 :type ~type
                  :modifiables [mod#]
                  :cost cost#
                  :add (fn [ch#]
@@ -381,6 +384,7 @@
                        cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
                    (struct-map trait
                      :name ~display-name
+                     :type :secondary
                      :modifiables [modifiable#]
                      :cost cost-cell#
                      :add (fn [char#]
@@ -396,6 +400,7 @@
   [trait-name cost secondary primary cells]
   (let [val1-name (symcat primary "-secondary-mod")]
     `(basic-trait ~trait-name
+                  :secondary
                   (cell ~'cp-cost ~cost)
                   (let [[val1# val2#] (secondary-validators ~primary ~trait-name)]
                     (list* val1# val2# ~cells)))))
@@ -453,6 +458,7 @@
                         ac# (conj ~cells cost#)]
                     (struct-map trait
                       :name ~(make-display-name n)
+                      :type :skill
                       :modifiables [roll# level#]
                       :cost cost#
                       :add (fn [ch#]
@@ -484,25 +490,28 @@
 
 (defmacro trait-base
   "Define a standard trait"
-  ([cost-type trait-name cost-vec]
-     `(trait-base ~cost-type ~trait-name ~cost-vec nil))
-  ([cost-type trait-name cost-vec cells]
+  ([type trait-name cost-vec]
+     `(trait-base ~type ~trait-name ~cost-vec nil))
+  ([type trait-name cost-vec cells]
      (let [cost-name (symcat trait-name "-cost")]
        `(variable-trait ~(make-display-name trait-name)
+                        ~type
                         (make-modifiable ~trait-name [1 ~(count cost-vec)] 1)
-                        (cell ~cost-type
+                        (cell ~(condp = type
+                                        :trait 'cp-cost
+                                        :archetype 'ap-cost)
                               (~cost-vec (dec ~(var-from-name trait-name))))
                         ~cells))))
 
 (defmacro st-trait
   "Define a standard trait"
   [& args]
-  `(trait-base ~'cp-cost ~@args))
+  `(trait-base :trait ~@args))
 
 (defmacro ar-trait
   "Define an archetype trait"
   [& args]
-  `(trait-base ~'ap-cost ~@args))
+  `(trait-base :archetype ~@args))
 
 ;;;;;;
 (comment

@@ -60,16 +60,19 @@
                              [(cell wil-mods (- 7 ?int))])
 
       (variable-trait "Light/Short"
+                      :secondary
                       (make-modifiable light-short [1 3] 1)
                       (cell cp-cost 0)
                       [(cell displayed-bld-mods (* -1 ?light-short))])
       (variable-trait "Fat/Obese"
+                      :secondary
                       (make-modifiable fat-obese [1 2] 1)
                       (cell cp-cost ([-3 -5] (dec ?fat-obese)))
                       [(cell bld-mods ([3 8] (dec ?fat-obese)))
                        (cell damage-points-mods ([1 3] (dec ?fat-obese)))
                        (cell agi-mods ([0 -2] (dec ?fat-obese)))])
       (variable-trait "Ill"
+                      :secondary
                       (fn [] (make-modifiable ill [1 3] 1))
                       (fn [] (cell cp-cost ([-1 -3 -5] (dec ?ill))))
                       (fn [] []))])

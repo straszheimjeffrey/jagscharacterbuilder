@@ -306,6 +306,7 @@
 (comment
   (show-frame)
   (print-dataflow (:model character))
+  (:traits character)
   
   (use :reload 'jagsrpg.gui)
   (use :reload 'jagsrpg.model)
