@@ -17,7 +17,7 @@
   (:use jagsrpg.model)
   (:use clojure.contrib.dataflow))
 
-(def archetypes
+(def archetypes*
      [(ar-trait dreamer [2])
       (ar-trait extraordinarily-tough [16]
                 [(cell damage-points-mods 8)])
@@ -37,6 +37,8 @@
       (ar-trait unusual-gear [2 4])
       (ar-trait will-to-fight [4]
                 [(cell damage-points-mods 4)])])
+
+(def archetypes (sort-by :name archetypes*))
 
 
 ;; End of file

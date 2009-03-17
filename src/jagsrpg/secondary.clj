@@ -70,7 +70,8 @@
                       (cell cp-cost ([-3 -5] (dec ?fat-obese)))
                       [(cell bld-mods ([3 8] (dec ?fat-obese)))
                        (cell damage-points-mods ([1 3] (dec ?fat-obese)))
-                       (cell agi-mods ([0 -2] (dec ?fat-obese)))])
+                       (cell agi-mods ([0 -2] (dec ?fat-obese)))
+                       (cell charm-mods -2)])
       (variable-trait "Ill"
                       :secondary
                       (make-modifiable ill [1 3] 1)
