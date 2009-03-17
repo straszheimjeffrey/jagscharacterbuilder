@@ -293,16 +293,21 @@
     (.add "Traits" (trait-panel ch standard-traits :trait))
     (.add "Archetypes" (trait-panel ch archetypes :archetype))))
 
+(defn- add-character-to-frame
+  [fr ch]
+  (let [cp (.getContentPane fr)]
+    (do (doto cp
+          (.add (top-panel ch))
+          (.add (bottom-panel ch)))
+        (.pack fr))))
+
 (defn show-frame
   [ch]
   (let [layout (MigLayout. "fill, wrap 1")
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
-      (.add (top-panel ch))
-      (.add (bottom-panel ch))
-      (.setSize 800 600)
-      (.pack)
+      (add-character-to-frame ch)
       (.setVisible true)
       (.show))))
            
