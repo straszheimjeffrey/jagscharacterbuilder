@@ -73,9 +73,9 @@
                        (cell agi-mods ([0 -2] (dec ?fat-obese)))])
       (variable-trait "Ill"
                       :secondary
-                      (fn [] (make-modifiable ill [1 3] 1))
-                      (fn [] (cell cp-cost ([-1 -3 -5] (dec ?ill))))
-                      (fn [] []))])
+                      (make-modifiable ill [1 3] 1)
+                      (cell cp-cost ([-1 -3 -5] (dec ?ill)))
+                      nil)])
 
 (comment
 

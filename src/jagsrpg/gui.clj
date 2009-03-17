@@ -226,6 +226,26 @@
   (let [layout (MigLayout.)
         panel (JPanel. layout)]
     panel))
+
+(defn add-trait-to-gui
+  [ch dp trait]
+  (let [nl (label (:name trait))
+        sps (map (partial tied-spinner ch) (:modifiables trait))
+        c (tied-label (:cost trait))
+        d (JButton. "Delete")]
+    (add-trait ch trait)
+    (.add dp nl)
+    (doseq [s sps] (.add dp s))
+    (.add dp c)
+    (.add dp d "wrap")
+    (.addActionListener d
+          (proxy [ActionListener] []
+            (actionPerformed [evt]
+                             (remove-trait ch trait)
+                             (.remove dp nl)
+                             (doseq [s sps] (.remove dp s))
+                             (.remove dp c)
+                             (.remove dp d))))))
   
 (defn trait-selection-list
   [ch factories dp]
@@ -246,58 +266,41 @@
                   (let [n (.getSelectedValue list)
                         f (seek #(= n (:name %)) factories)]
                     (when f
-                      (let [trait ((:make f))
-                            ;q (println trait)
-                            nl (label (:name trait))
-                            sps (map (partial tied-spinner ch) (:modifiables trait))
-                            c (tied-label (:cost trait))
-                            d (JButton. "Delete")]
-                        (do
-                          (add-trait ch trait)
-                          (.add dp nl)
-                          (doseq [s sps] (.add dp s))
-                          (.add dp c)
-                          (.add dp d "wrap")
-                          (.revalidate panel)
-                          (.addActionListener d
-                               (proxy [ActionListener] []
-                                 (actionPerformed [evt]
-                                     (remove-trait ch trait)
-                                     (.remove dp nl)
-                                     (doseq [s sps] (.remove dp s))
-                                     (.remove dp c)
-                                     (.remove dp d)
-                                     (.revalidate panel))))))))))))
+                        (do (add-trait-to-gui ch dp ((:make f)))
+                            (.revalidate panel))))))))
       (doto panel
         (.add (scroll list))
         (.add button)))))
                                          
 (defn trait-panel
-  [ch factories]
+  [ch factories tp]
   (let [dp (trait-display-panel ch)
         layout (MigLayout. "wrap 2" "[50%:n:n][]")
-        panel (JPanel. layout)]
-    (doto panel
-      (.add (scroll dp) "grow")
-      (.add (trait-selection-list ch factories dp)))))
-
+        panel (JPanel. layout)
+        traits (filter #(= tp (:type %)) @(:traits ch))]
+    (do (doto panel
+          (.add (scroll dp) "grow")
+          (.add (trait-selection-list ch factories dp)))
+        (doseq [t traits]
+          (add-trait-to-gui ch dp t))
+        panel)))
+                     
 (defn bottom-panel
   [ch]
   (doto (JTabbedPane.)
-    (.add "Secondary" (trait-panel ch secondary-traits))
-    (.add "Skills" (trait-panel ch skills))
-    (.add "Traits" (trait-panel ch standard-traits))
-    (.add "Archetypes" (trait-panel ch archetypes))))
+    (.add "Secondary" (trait-panel ch secondary-traits :secondary))
+    (.add "Skills" (trait-panel ch skills :skill))
+    (.add "Traits" (trait-panel ch standard-traits :trait))
+    (.add "Archetypes" (trait-panel ch archetypes :archetype))))
 
-(def character (build-character))
-
-(defn show-frame []
+(defn show-frame
+  [ch]
   (let [layout (MigLayout. "fill, wrap 1")
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
-      (.add (top-panel character))
-      (.add (bottom-panel character))
+      (.add (top-panel ch))
+      (.add (bottom-panel ch))
       (.setSize 800 600)
       (.pack)
       (.setVisible true)
@@ -305,7 +308,10 @@
            
 
 (comment
-  (show-frame)
+
+  (def character (build-character))
+
+  (show-frame character)
   (print-dataflow (:model character))
   (:traits character)
   (def ser1 (serialize-character character))

@@ -8,6 +8,6 @@
  :main true)
 
 (defn -main [& args]
-  (show-frame))
+  (show-frame (build-character)))
     
 
