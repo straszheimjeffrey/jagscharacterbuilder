@@ -277,7 +277,7 @@
 
 ;; A trait
 (defstruct trait
-  :name          ; The name, a String
+  :name          ; The name, a String -- must match its factory name
   :type          ; Such as :secondary, :trait, :archetype, or :skill
   :modifiables   ; A collection of modifiables
   :cost          ; The cost cell

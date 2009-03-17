@@ -15,8 +15,54 @@
 
 (ns jagsrpg.serialize
   (:use jagsrpg.model)
-  (:use clojure.contrib.dataflow))
+  (:use jagsrpg.traits)
+  (:use jagsrpg.secondary)
+  (:use jagsrpg.skills)
+  (:use jagsrpg.archetype)
+  (:use clojure.contrib.dataflow)
+  (:use [clojure.contrib.seq-utils :only (seek)]))
+
+(defn serialize-character
+  "Given a character, extract the data needed to rebuild it"
+  [ch]
+  (let [sc (get-source-cells (:model ch))
+        val-map (into {} (map (fn [c] [(:name c) @(:value c)]) sc))
+        traits (map (fn [t] [(:name t) (:type t)]) @(:traits ch))]
+       {:source-cells val-map
+        :traits traits}))
+
+(defn- type-to-trait-collection
+  [type]
+  (condp = type
+           :trait standard-traits
+           :secondary secondary-traits
+           :skill skills
+           :archetype archetypes))
+
+(defn deserialize-character
+  "Given a form built by serialize-character, make a character again"
+  [ser]
+  (let [ch (build-character)]
+    (do (doseq [td (:traits ser)]
+          (let [col (type-to-trait-collection (second td))
+                factory (seek #(= (first td) (:name %)) col)
+                tr ((:make factory))]
+            (add-trait ch tr)))
+        (update-values (:model ch) (:source-cells ser))
+        ch)))
+    
+
+(comment
+
+  (def fred (build-character))
+  (def ser (serialize-character fred))
+  (deserialize-character ser)
+  
 
 
+  (use :reload 'jagsrpg.serialize)
+  (use 'clojure.contrib.stacktrace) (e)
+)
+  
 
 ;; End of file

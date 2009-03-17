@@ -19,6 +19,7 @@
   (:use jagsrpg.skills)
   (:use jagsrpg.traits)
   (:use jagsrpg.archetype)
+  (:use jagsrpg.serialize)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (seek)]))
 
@@ -307,6 +308,8 @@
   (show-frame)
   (print-dataflow (:model character))
   (:traits character)
+  (def ser1 (serialize-character character))
+  (def character (deserialize-character ser1))
   
   (use :reload 'jagsrpg.gui)
   (use :reload 'jagsrpg.model)
