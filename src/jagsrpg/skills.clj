@@ -15,7 +15,87 @@
 
 (ns jagsrpg.skills
   (:use jagsrpg.model)
-  (:use clojure.contrib.dataflow))
+  (:use clojure.contrib.dataflow)
+  (:use [clojure.contrib.except :only (throwf)]))
+
+
+(def expensive-skill-cost
+     (make-table 8 [1/4 1/2 1 2 3 4 5 6 12 21 29 37 45]))
+(def expensive-skill-linked-cost
+     (make-table -3 [1/2 1 2 3 4 6 11 14 19 23]))
+(def standard-skill-cost
+     (make-table 10 [1/4 1/2 1 2 3 4 5 13 21 27 35]))
+(def standard-skill-linked-cost
+     (make-table -2 [1/4 1/2 1 2 3 4 6 14 23 31]))
+(def level-cost-expensive
+     (make-table 1 [-1 0 4 16]))
+(def level-cost-standard
+     (make-table 1 [-1 0 2 12]))
+
+(defn lookup-linked-cost
+  [table roll stat]
+  (let [diff (- roll stat)]
+    (try (table diff)
+         (catch IndexOutOfBoundsException e (. java.lang.Integer MAX_VALUE)))))
+
+(defn skill-cost
+  [roll level type stats]
+  (let [[t lt l] (cond
+                  (= type :standard) [standard-skill-cost
+                                      standard-skill-linked-cost
+                                      level-cost-standard]
+                  (= type :expensive) [expensive-skill-cost
+                                       expensive-skill-linked-cost
+                                       level-cost-expensive]
+                  :default (throwf Exception "Bad skill type %s" type))]
+    (+ (l level) (apply min (t roll) (map (partial lookup-linked-cost lt roll)
+                                          stats)))))
+
+(defmacro skill
+  ([n type stats] `(skill ~n ~type ~stats nil))
+  ([n type stats cells]
+     (let [roll-name (symcat n "-roll")
+           level-name (symcat n "-level")]
+       `(struct-map trait-factory
+          :name ~(make-display-name n)
+          :make (fn []
+                  (let [roll# (make-modifiable ~roll-name [8 20] 12)
+                        level# (make-modifiable ~level-name [1 4] 2)
+                        cost# (cell ~'cp-cost (skill-cost ~(var-from-name roll-name)
+                                                          ~(var-from-name level-name)
+                                                          ~type
+                                                          [~@(map #(var-from-name %)
+                                                                  stats)]))
+                        ac# (conj ~cells cost#)]
+                    (struct-map trait
+                      :name ~(make-display-name n)
+                      :type :skill
+                      :modifiables [roll# level#]
+                      :cost cost#
+                      :add (fn [ch#]
+                             (do (add-modifiable ch# roll#)
+                                 (add-modifiable ch# level#)
+                                 (add-cells ch# ac#)))
+                      :remove (fn [ch#]
+                                (remove-cells ch# ac#)
+                                (remove-modifiable ch# roll#)
+                                (remove-modifiable ch# level#)))))))))
+
+(defn compute-grapple-level
+  [n roll]
+  (if (< n 0)
+    (+ roll n)
+    n))
+
+(defmacro grapple-bonus
+  [which array skill]
+  (let [roll (var-from-name (symcat skill "-roll"))
+        level (var-from-name (symcat skill "-level"))
+        cell-name (symcat which "-grapple-skill-mods")]
+    `(cell ~cell-name (if (>= ~roll 12)
+                        [(compute-grapple-level (~array (dec ~level)) ~roll) ~level]
+                        [0 0]))))
+
 
 (def skills
      [(skill acrobatics       :expensive [agi])

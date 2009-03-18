@@ -17,6 +17,12 @@
   (:use jagsrpg.model)
   (:use clojure.contrib.dataflow))
 
+
+(defmacro ar-trait
+  "Define an archetype trait"
+  [& args]
+  `(trait-base :archetype ~@args))
+
 (def archetypes*
      [(ar-trait dreamer [2])
       (ar-trait extraordinarily-tough [16]

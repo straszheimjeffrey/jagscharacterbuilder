@@ -15,7 +15,76 @@
 
 (ns jagsrpg.secondary
   (:use jagsrpg.model)
-  (:use clojure.contrib.dataflow))
+  (:use clojure.contrib.dataflow)
+  (:use [clojure.contrib.except :only (throwf)]))
+
+;;; Secondary Traits
+
+(def secondary-stat-cost-table
+     (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
+
+(defn secondary-cost
+  "Compute the standard secondary cost"
+  [level primary mult]
+  (* mult (apply + (for [i (range 1 (inc level))]
+                     (let [val (+ primary (* i mult))]
+                       (secondary-stat-cost-table val))))))
+
+(defmacro secondary-validators
+  "Create the secondary validation cells"
+  [prim cell-name]
+  (let [val-name (symcat prim "-secondary-mod")]
+    `(list (cell ~'secondary-stat-modifier (quote ~cell-name))
+           (cell ~val-name (quote ~cell-name)))))
+
+(defmacro standard-secondary-trait
+  "A trait-factory to build a standard secondary trait modifier.
+   Direction is :increase or :decrease.  If display-name is nil, it
+   will equal the cell-name"
+  [cell-name secondary primary direction]
+  (let [display-name (make-display-name cell-name)
+        multiplier (cond
+                    (= direction :increase) 1
+                    (= direction :decrease) -1
+                    :otherwise (throwf Exception "Bad direction %s" (str :direction)))
+        modifier-name (symcat secondary "-mods")]
+    `(struct-map trait-factory
+         :name ~display-name
+         :make (fn []
+                 (let [main-cell# (cell :source ~cell-name 1)
+                       modifiable# (make-modifiable ~cell-name [1 2] 1)
+                       cost-cell# (cell ~'cp-cost
+                                        (secondary-cost ~(var-from-name cell-name)
+                                                        ~(var-from-name primary)
+                                                        ~multiplier))
+                       mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name)
+                                                         ~multiplier))
+                       [val1-cell# val2-cell#] (secondary-validators
+                                                ~primary
+                                                ~cell-name)
+                       cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
+                   (struct-map trait
+                     :name ~display-name
+                     :type :secondary
+                     :modifiables [modifiable#]
+                     :cost cost-cell#
+                     :add (fn [char#]
+                            (add-modifiable char# modifiable#)
+                            (add-cells char# cells#))
+                     :remove (fn [char#]
+                               (remove-cells char# cells#)
+                               (remove-modifiable char# modifiable#))))))))
+       
+(defmacro basic-secondary-trait
+  "Create a basic secondary trait.  Add cells, is a function returning
+   additional cells."
+  [trait-name cost secondary primary cells]
+  (let [val1-name (symcat primary "-secondary-mod")]
+    `(basic-trait ~trait-name
+                  :secondary
+                  (cell ~'cp-cost ~cost)
+                  (let [[val1# val2#] (secondary-validators ~primary ~trait-name)]
+                    (list* val1# val2# ~cells)))))
 
 (def secondary-traits
      [(standard-secondary-trait powerful      str phy :increase)

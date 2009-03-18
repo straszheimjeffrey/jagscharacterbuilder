@@ -18,6 +18,10 @@
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.math :only (round)]))
 
+(defmacro st-trait
+  "Define a standard trait"
+  [& args]
+  `(trait-base :trait ~@args))
 
 (def standard-traits*
      [(st-trait ambidextrous [12])
