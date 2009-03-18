@@ -154,21 +154,42 @@
       (skill fencing          :expensive [agi])
       (skill firearms         :expensive [cor])
       (skill heavy-weapons    :expensive [cor])
-      (skill jujitsu          :expensive [agi]
-             [(grapple-bonus offensive [1 2 4 -9] jujitsu)
-              (grapple-bonus defensive [1 2 4 -9] jujitsu)])
-      (skill karate           :expensive [agi])
+      (hth-skill jujitsu
+                 [0 0 1 2]
+                 [0 0 1 2]
+                 [0 0 1 2]
+                 [(grapple-bonus offensive [1 2 4 -9] jujitsu)
+                  (grapple-bonus defensive [1 2 4 -9] jujitsu)])
+      (hth-skill karate
+                 [1 2 3 -10]
+                 [1 2 3 -10]
+                 [1 2 3 -10]
+                 nil)
       (skill knife-fighting   :expensive [agi])
-      (skill kung-fu          :expensive [agi])
+      (hth-skill kung-fu
+                 [0 0 1 2]
+                 [0 0 1 2]
+                 [0 0 1 2]
+                 nil)
       (skill melee-weapons    :expensive [agi]) 
       (skill staff            :expensive [agi])
-      (skill streetfighting   :expensive [agi]
-             [(grapple-bonus offensive [1 2 3 -9] streetfighting)
-              (grapple-bonus defensive [0 1 2 -12] streetfighting)])
-      (skill tae-kwon-do      :expensive [agi])
-      (skill tai-chi          :expensive [agi]
-             [(grapple-bonus offensive [0 1 2 -10] tai-chi)
-              (grapple-bonus defensive [1 2 4 -7] tai-chi)])
+      (hth-skill streetfighting
+                 [0 0 2 3]
+                 [0 0 2 3]
+                 [0 0 2 3]
+                 [(grapple-bonus offensive [1 2 3 -9] streetfighting)
+                  (grapple-bonus defensive [0 1 2 -12] streetfighting)])
+      (hth-skill tae-kwon-do
+                 [0 1 2 4]
+                 [0 1 2 4]
+                 [0 1 2 -9]
+                 nil)
+      (hth-skill tai-chi
+                 [0 0 0 0]
+                 [0 0 0 0]
+                 [0 0 0 0]
+                 [(grapple-bonus offensive [0 1 2 -10] tai-chi)
+                  (grapple-bonus defensive [1 2 4 -7] tai-chi)])
       (skill tangle-weapons   :expensive [cor])
       (skill thrown-knife     :expensive [cor])
       (skill thrown-weapons   :expensive [cor])
