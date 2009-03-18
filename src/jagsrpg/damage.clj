@@ -23,7 +23,7 @@
   "Add +/- y to x, or +/- y * 10%, whichever is greater.  Will never
    return less than zero."
   [x y]
-  (min 0
+  (max 0
        (cond
         (> y 0) (max (+ x y) (round (+ x (* x (/ y 10)))))
         (< y 0) (min (+ x y) (round (+ x (* x (/ y 10)))))
@@ -59,7 +59,9 @@
         left (fn [mc lc fn y]
                `(cell ~mc (if (> ~bn 0)
                             (max ~(var-from-name lc) (~fn ~bn ~y))
-                            0)))]
+                            0)))
+        right (fn [mc lc y]
+                `(cell ~mc (max ~(var-from-name lc) (j-mult ~bn ~y))))]
     `[(cell ~a (if (> ~bn 0)
                  1
                  0))
@@ -73,9 +75,9 @@
       (cell ~u (j-add ~bn 1))
       (cell ~v (j-add ~bn 2))
       (cell ~w (j-add ~bn 3))
-      (cell ~x (max ~(var-from-name w) (j-mult ~bn 1.5)))
-      (cell ~y (j-mult ~bn 1.75))
-      (cell ~z (j-mult ~bn 2))]))
+      ~(right x w 1.5)
+      ~(right y x 1.75)
+      ~(right z y 2)]))
 
 
 (comment

@@ -90,18 +90,26 @@
 (defn cross-name [n] (symcat n "-cross"))
 (defn kick-name [n] (symcat n "-kick"))
 
+(defn damage-comp
+  [arr level roll]
+  (let [n (arr (dec level))]
+    (if (< n 0)
+      (+ n roll)
+      n)))
+
 (defmacro hth-skill
   [n punch cross kick cells]
-  (let [level (symcat n "-level")
+  (let [level (var-from-name (symcat n "-level"))
+        roll (var-from-name (symcat n "-roll"))
         punch-dam (punch-name n)
         cross-dam (cross-name n)
         kick-dam (kick-name n)
-        punch-cell `(cell ~punch-dam (+ (~punch ~(var-from-name level))
+        punch-cell `(cell ~punch-dam (+ (damage-comp ~punch ~level ~roll)
                                         ~'?hand-to-hand-damage))
-        cross-cell `(cell ~cross-dam (j-add (+ (~cross ~(var-from-name level))
+        cross-cell `(cell ~cross-dam (j-add (+ (damage-comp ~cross ~level ~roll)
                                                ~'?hand-to-hand-damage)
                                             1))
-        kick-cell `(cell ~kick-dam (j-add (+ (~kick ~(var-from-name level))
+        kick-cell `(cell ~kick-dam (j-add (+ (damage-comp ~kick ~level ~roll)
                                              ~'?hand-to-hand-damage)
                                           2))
         punch-chart (impact-chart punch-dam)
@@ -113,12 +121,6 @@
                            kick-chart))]
     `(skill-abstract ~n :expensive [~'agi] ~cells :hth)))
  
-(comment
-(hth-skill fred [0 1 2 3] [0 0 0 0] [1 2 3 4] nil)
-(macroexpand '(hth-skill fred [0 1 2 3] [0 0 0 0] [1 2 3 4] nil))
-(macroexpand-1 '(skill fred :expensive [con]))
-)
-
 (defn compute-grapple-level
   [n roll]
   (if (< n 0)
@@ -138,14 +140,17 @@
 (def skills
      [(skill acrobatics       :expensive [agi])
       (skill bow              :expensive [cor])
-      (skill boxing           :expensive [agi]
-             [(cell hurt-condition-mods
-                    (condp = ?boxing-level
-                             1 0
-                             2 (if (>= ?boxing-roll 13) 1 0)
-                             3 2
-                             4 8))
-              (cell damage-points-mods ([0 0 1 4] (dec ?boxing-level)))])
+      (hth-skill boxing
+                 [0 1 2 5]
+                 [1 3 4 -9]
+                 [0 0 0 0]
+                 [(cell hurt-condition-mods
+                        (condp = ?boxing-level
+                                 1 0
+                                 2 (if (>= ?boxing-roll 13) 1 0)
+                                 3 2
+                                 4 8))
+                  (cell damage-points-mods ([0 0 1 4] (dec ?boxing-level)))])
       (skill fencing          :expensive [agi])
       (skill firearms         :expensive [cor])
       (skill heavy-weapons    :expensive [cor])
