@@ -343,7 +343,9 @@
           (.add (scroll dp) "grow")
           (.add (trait-selection-list ch factories dp extra)))
         (doseq [t traits]
-          (add-trait-to-gui ch dp t))
+          (if (:hth t)
+            (add-hth-skill-to-gui ch dp t extra)
+            (add-trait-to-gui ch dp t)))
         panel)))
 
 (defn skill-and-weapon-panel

@@ -48,6 +48,7 @@
       <sysproperty key="clojure.compile.path" value="${build}"/>
       <arg value="jagsrpg.model"/>
       <arg value="jagsrpg.secondary"/>
+      <arg value="jagsrpg.damage"/>
       <arg value="jagsrpg.skills"/>
       <arg value="jagsrpg.traits"/>
       <arg value="jagsrpg.archetype"/>
