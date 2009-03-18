@@ -71,6 +71,7 @@
                    :name ~(make-display-name n)
                    :type :skill
                    :hth ~hth
+                   :bare-name (quote ~n)
                    :modifiables [roll# level#]
                    :cost cost#
                    :add (fn [ch#]

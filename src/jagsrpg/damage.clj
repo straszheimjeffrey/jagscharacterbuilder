@@ -79,6 +79,25 @@
       ~(right y x 1.75)
       ~(right z y 2)]))
 
+(defn get-impact-names
+  [base-name]
+  [(symcat base-name "-0")
+   (symcat base-name "-1")
+   (symcat base-name "-2-3")
+   (symcat base-name "-4-5")
+   (symcat base-name "-6-7")
+   (symcat base-name "-8-9")
+   (symcat base-name "-10-11")
+   (symcat base-name "-12")
+   base-name
+   (symcat base-name "-15")
+   (symcat base-name "-16-17")
+   (symcat base-name "-18-20")
+   (symcat base-name "-21-25")
+   (symcat base-name "-26-29")
+   (symcat base-name "-30")])
+
+
 
 (comment
   (def ch (impact-chart 'fred))

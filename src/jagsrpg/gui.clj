@@ -15,6 +15,7 @@
 
 (ns jagsrpg.gui
   (:use jagsrpg.model)
+  (:use jagsrpg.damage)
   (:use jagsrpg.secondary)
   (:use jagsrpg.skills)
   (:use jagsrpg.traits)
@@ -53,6 +54,14 @@
 (defn label
   [t]
   (JLabel. t))
+
+(defn scroll
+  [panel]
+  (let [sp (JScrollPane. panel)]
+    sp))
+
+
+;;; Components tied to model objects
 
 (defn tied-label
   "Build a swing label that tracks a stat"
@@ -97,6 +106,9 @@
                                      (do (.setValue spinner cur-m)
                                          (.printStackTrace e)))))))))
     spinner))
+
+
+;;; Top panels
 
 (defn cost-panel
   [ch]
@@ -225,10 +237,8 @@
       (.add (damage-panel ch) "sy 2")
       (.add (derived-stat-panel ch)))))
 
-(defn scroll
-  [panel]
-  (let [sp (JScrollPane. panel)]
-    sp))
+
+;;; Bottom Panels
 
 (defn trait-display-panel
   [ch]
@@ -237,27 +247,54 @@
     panel))
 
 (defn add-trait-to-gui
-  [ch dp trait]
-  (let [nl (label (:name trait))
-        sps (map (partial tied-spinner ch) (:modifiables trait))
-        c (tied-label (:cost trait))
-        d (JButton. "Delete")]
-    (add-trait ch trait)
-    (.add dp nl)
-    (doseq [s sps] (.add dp s))
-    (.add dp c)
-    (.add dp d "wrap")
-    (.addActionListener d
-          (proxy [ActionListener] []
-            (actionPerformed [evt]
-                             (remove-trait ch trait)
-                             (.remove dp nl)
-                             (doseq [s sps] (.remove dp s))
-                             (.remove dp c)
-                             (.remove dp d))))))
+  ([ch dp trait] (add-trait-to-gui ch dp trait (fn [] nil) (fn [] nil)))
+  ([ch dp trait extra-adds extra-removes]
+     (let [nl (label (:name trait))
+           sps (map (partial tied-spinner ch) (:modifiables trait))
+           c (tied-label (:cost trait))
+           d (JButton. "Delete")]
+       (add-trait ch trait)
+       (.add dp nl)
+       (doseq [s sps] (.add dp s))
+       (.add dp c)
+       (.add dp d "wrap")
+       (extra-adds)
+       (.addActionListener d
+                           (proxy [ActionListener] []
+                             (actionPerformed [evt]
+                                              (remove-trait ch trait)
+                                              (.remove dp nl)
+                                              (doseq [s sps] (.remove dp s))
+                                              (.remove dp c)
+                                              (.remove dp d)
+                                              (extra-removes)))))))
+
+(defn add-hth-skill-to-gui
+  [ch dp trait dam-dp]
+  (let [base-name (:bare-name trait)
+        labels (fn [base]
+                 (map (partial tied-label ch) (get-impact-names base)))
+        punch-labels (labels (symcat base-name "-punch"))
+        cross-labels (labels (symcat base-name "-cross"))
+        kick-labels (labels (symcat base-name "-kick"))
+        add-one-set (fn [labels]
+                      (do (doseq [lab (butlast labels)]
+                            (.add dam-dp lab))
+                          (.add dam-dp (last labels) "wrap")))
+        remove-one-set (fn [labels]
+                         (doseq [lab labels]
+                           (.remove dam-dp lab)))
+        add (fn [] (do (add-one-set punch-labels)
+                       (add-one-set cross-labels)
+                       (add-one-set kick-labels)))
+        remove (fn [] (do (remove-one-set punch-labels)
+                          (remove-one-set cross-labels)
+                          (remove-one-set kick-labels)))]
+    (add-trait-to-gui ch dp trait add remove)))
+  
   
 (defn trait-selection-list
-  [ch factories dp]
+  [ch factories dp extra]
   (let [lm (DefaultListModel.)
         list (JList. lm)
         button (JButton. "Add")
@@ -270,37 +307,52 @@
         (.setSelectionMode (ListSelectionModel/SINGLE_SELECTION)))
       (doto button
         (.addActionListener
-           (proxy [ActionListener] []
-               (actionPerformed [evt]
+         (proxy [ActionListener] []
+           (actionPerformed [evt]
                   (let [n (.getSelectedValue list)
                         f (seek #(= n (:name %)) factories)]
                     (when f
-                        (do (add-trait-to-gui ch dp ((:make f)))
-                            (.revalidate panel))))))))
-      (doto panel
-        (.add (scroll list))
-        (.add button)))))
-                                         
+                      (let [tr ((:make f))]
+                        (do
+                          (if (:hth tr)
+                            (add-hth-skill-to-gui ch dp tr extra)
+                            (add-trait-to-gui ch dp tr))
+                          (.revalidate panel)))))))))
+        (doto panel
+          (.add (scroll list))
+          (.add button)))))
+  
 (defn trait-panel
-  [ch factories tp]
+  [ch factories tp extra]
   (let [dp (trait-display-panel ch)
         layout (MigLayout. "wrap 2" "[50%:n:n][]")
         panel (JPanel. layout)
         traits (filter #(= tp (:type %)) @(:traits ch))]
     (do (doto panel
           (.add (scroll dp) "grow")
-          (.add (trait-selection-list ch factories dp)))
+          (.add (trait-selection-list ch factories dp extra)))
         (doseq [t traits]
           (add-trait-to-gui ch dp t))
         panel)))
+
+(defn skill-and-weapon-panel
+  [ch factories tp]
+  (let [weapon-dp (trait-display-panel ch)
+        skill-panel (trait-panel ch factories tp weapon-dp)]
+    [skill-panel weapon-dp]))
                      
 (defn bottom-panel
   [ch]
-  (doto (JTabbedPane.)
-    (.add "Secondary" (trait-panel ch secondary-traits :secondary))
-    (.add "Skills" (trait-panel ch skills :skill))
-    (.add "Traits" (trait-panel ch standard-traits :trait))
-    (.add "Archetypes" (trait-panel ch archetypes :archetype))))
+  (let [[skill-panel weap-panel] (skill-and-weapon-panel ch skills :skill)]
+    (doto (JTabbedPane.)
+      (.add "Secondary" (trait-panel ch secondary-traits :secondary nil))
+      (.add "Skills" skill-panel)
+      (.add "Traits" (trait-panel ch standard-traits :trait nil))
+      (.add "Archetypes" (trait-panel ch archetypes :archetype nil))
+      (.add "Weapons" weap-panel))))
+
+
+;;; Menu Operations
 
 (defn- add-character-to-frame
   [fr ch]
@@ -336,7 +388,6 @@
                                         ;     (.pack fr))
                 (show-frame nch))))))))
               
-
 (defn save-character
   [fr ch]
   (let [chooser (JFileChooser.)]
@@ -377,7 +428,10 @@
       (.add file menu-open)
       (.add file menu-save)
       (.setJMenuBar fr bar))))
-        
+
+
+;;; Frame
+
 (defn show-frame
   [ch]
   (let [layout (MigLayout. "fill, wrap 1")
