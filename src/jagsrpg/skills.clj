@@ -15,6 +15,7 @@
 
 (ns jagsrpg.skills
   (:use jagsrpg.model)
+  (:use jagsrpg.damage)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)]))
 
@@ -51,35 +52,72 @@
     (+ (l level) (apply min (t roll) (map (partial lookup-linked-cost lt roll)
                                           stats)))))
 
+(defmacro skill-abstract
+  [n type stats cells hth]
+  (let [roll-name (symcat n "-roll")
+        level-name (symcat n "-level")]
+    `(struct-map trait-factory
+       :name ~(make-display-name n)
+       :make (fn []
+               (let [roll# (make-modifiable ~roll-name [8 20] 12)
+                     level# (make-modifiable ~level-name [1 4] 2)
+                     cost# (cell ~'cp-cost (skill-cost ~(var-from-name roll-name)
+                                                       ~(var-from-name level-name)
+                                                       ~type
+                                                       [~@(map #(var-from-name %)
+                                                               stats)]))
+                     ac# (conj ~cells cost#)]
+                 (struct-map trait
+                   :name ~(make-display-name n)
+                   :type :skill
+                   :hth ~hth
+                   :modifiables [roll# level#]
+                   :cost cost#
+                   :add (fn [ch#]
+                          (do (add-modifiable ch# roll#)
+                              (add-modifiable ch# level#)
+                              (add-cells ch# ac#)))
+                   :remove (fn [ch#]
+                             (remove-cells ch# ac#)
+                             (remove-modifiable ch# roll#)
+                             (remove-modifiable ch# level#))))))))
+
 (defmacro skill
-  ([n type stats] `(skill ~n ~type ~stats nil))
-  ([n type stats cells]
-     (let [roll-name (symcat n "-roll")
-           level-name (symcat n "-level")]
-       `(struct-map trait-factory
-          :name ~(make-display-name n)
-          :make (fn []
-                  (let [roll# (make-modifiable ~roll-name [8 20] 12)
-                        level# (make-modifiable ~level-name [1 4] 2)
-                        cost# (cell ~'cp-cost (skill-cost ~(var-from-name roll-name)
-                                                          ~(var-from-name level-name)
-                                                          ~type
-                                                          [~@(map #(var-from-name %)
-                                                                  stats)]))
-                        ac# (conj ~cells cost#)]
-                    (struct-map trait
-                      :name ~(make-display-name n)
-                      :type :skill
-                      :modifiables [roll# level#]
-                      :cost cost#
-                      :add (fn [ch#]
-                             (do (add-modifiable ch# roll#)
-                                 (add-modifiable ch# level#)
-                                 (add-cells ch# ac#)))
-                      :remove (fn [ch#]
-                                (remove-cells ch# ac#)
-                                (remove-modifiable ch# roll#)
-                                (remove-modifiable ch# level#)))))))))
+  ([n type stats] `(skill-abstract ~n ~type ~stats nil nil))
+  ([n type stats cells] `(skill-abstract ~n ~type ~stats ~cells nil)))
+
+(defn punch-name [n] (symcat n "-punch"))
+(defn cross-name [n] (symcat n "-cross"))
+(defn kick-name [n] (symcat n "-kick"))
+
+(defmacro hth-skill
+  [n punch cross kick cells]
+  (let [level (symcat n "-level")
+        punch-dam (punch-name n)
+        cross-dam (cross-name n)
+        kick-dam (kick-name n)
+        punch-cell `(cell ~punch-dam (+ (~punch ~(var-from-name level))
+                                        ~'?hand-to-hand-damage))
+        cross-cell `(cell ~cross-dam (j-add (+ (~cross ~(var-from-name level))
+                                               ~'?hand-to-hand-damage)
+                                            1))
+        kick-cell `(cell ~kick-dam (j-add (+ (~kick ~(var-from-name level))
+                                             ~'?hand-to-hand-damage)
+                                          2))
+        punch-chart (impact-chart punch-dam)
+        cross-chart (impact-chart cross-dam)
+        kick-chart (impact-chart kick-dam)
+        cells (vec (concat (list* punch-cell cross-cell kick-cell cells)
+                           punch-chart
+                           cross-chart
+                           kick-chart))]
+    `(skill-abstract ~n :expensive [~'agi] ~cells :hth)))
+ 
+(comment
+(hth-skill fred [0 1 2 3] [0 0 0 0] [1 2 3 4] nil)
+(macroexpand '(hth-skill fred [0 1 2 3] [0 0 0 0] [1 2 3 4] nil))
+(macroexpand-1 '(skill fred :expensive [con]))
+)
 
 (defn compute-grapple-level
   [n roll]
@@ -187,5 +225,10 @@
       (skill acedemic-disc    :standard  [mem res])
       (skill occupation-disc  :standard  [mem res cor agi])])
      
+
+(comment
+  (use :reload 'jagsrpg.skills)
+  (use 'clojure.contrib.stacktrace) (e)
+)
 
 ;; End of file

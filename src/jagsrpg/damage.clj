@@ -20,22 +20,25 @@
 ;  (:use [clojure.contrib.except :only (throwf)]))
 
 (defn j-add
-  "Add +/- y to x, or +/- y * 10%, whichever is greater"
+  "Add +/- y to x, or +/- y * 10%, whichever is greater.  Will never
+   return less than zero."
   [x y]
-  (cond
-   (> y 0) (max (+ x y) (round (+ x (* x (/ y 10)))))
-   (< y 0) (min (+ x y) (round (+ x (* x (/ y 10)))))
-   :otherwise x))
+  (min 0
+       (cond
+        (> y 0) (max (+ x y) (round (+ x (* x (/ y 10)))))
+        (< y 0) (min (+ x y) (round (+ x (* x (/ y 10)))))
+        :otherwise x)))
 
 (defn j-mult
-  "Multiple x and y and round results"
+  "Multiple x and y and round results.  Will never return negative"
   [x y]
-  (round (* x y)))
+  (if (> x 0)
+    (round (* x y))
+    (if (> y 1) 3 0)))
 
-(defmacro impact-chart
-  "Return two collections of cells representing damage.  Base name is
-   the name of the 13-14 cell.  The first collection are those to the
-   left of the main score, the second those to the right."
+(defn impact-chart
+  "Returns a collection of cell defining forms.  Meant to be used from
+   a macro, as the forms are unevaluated."
   [base-name]
   (let [bn (var-from-name base-name)
         a (symcat base-name "-0")
@@ -57,28 +60,27 @@
                `(cell ~mc (if (> ~bn 0)
                             (max ~(var-from-name lc) (~fn ~bn ~y))
                             0)))]
-    `[[(cell ~a (if (> ~bn 0)
-                  1
-                  0))
-       ~(left b a 'j-mult 0.1)
-       ~(left c b 'j-mult 0.25)
-       ~(left d c 'j-mult 0.33)
-       ~(left e d 'j-mult 0.5)
-       ~(left f e 'j-add -3)
-       ~(left g f 'j-add -2)
-       ~(left h g 'j-add -1)]
-      [(cell ~u (j-add ~bn 1))
-       (cell ~v (j-add ~bn 2))
-       (cell ~w (j-add ~bn 3))
-       (cell ~x (max ~(var-from-name w) (j-mult ~bn 1.5)))
-       (cell ~y (j-mult ~bn 1.75))
-       (cell ~z (j-mult ~bn 2))]]))
+    `[(cell ~a (if (> ~bn 0)
+                 1
+                 0))
+      ~(left b a 'j-mult 0.1)
+      ~(left c b 'j-mult 0.25)
+      ~(left d c 'j-mult 0.33)
+      ~(left e d 'j-mult 0.5)
+      ~(left f e 'j-add -3)
+      ~(left g f 'j-add -2)
+      ~(left h g 'j-add -1)
+      (cell ~u (j-add ~bn 1))
+      (cell ~v (j-add ~bn 2))
+      (cell ~w (j-add ~bn 3))
+      (cell ~x (max ~(var-from-name w) (j-mult ~bn 1.5)))
+      (cell ~y (j-mult ~bn 1.75))
+      (cell ~z (j-mult ~bn 2))]))
 
 
 (comment
-  (def ch (impact-chart fred))
-  (doseq [gr ch
-          cl gr]
+  (def ch (impact-chart 'fred))
+  (doseq [cl ch]
     (println cl))
 
 
