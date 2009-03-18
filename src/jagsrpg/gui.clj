@@ -246,6 +246,16 @@
         panel (JPanel. layout)]
     panel))
 
+(defn impact-display-panel
+  [ch]
+  (let [panel (trait-display-panel ch)
+        labels (map label impact-names)]
+    (do (.add panel (label "Name"))
+        (doseq [label (butlast labels)]
+          (.add panel label))
+        (.add panel (last labels) "wrap")
+        panel)))
+
 (defn add-trait-to-gui
   ([ch dp trait] (add-trait-to-gui ch dp trait (fn [] nil) (fn [] nil)))
   ([ch dp trait extra-adds extra-removes]
@@ -273,7 +283,8 @@
   [ch dp trait dam-dp]
   (let [base-name (:bare-name trait)
         labels (fn [base]
-                 (map (partial tied-label ch) (get-impact-names base)))
+                 (cons (-> base make-display-name label)
+                       (map (partial tied-label ch) (get-impact-symbols base))))
         punch-labels (labels (symcat base-name "-punch"))
         cross-labels (labels (symcat base-name "-cross"))
         kick-labels (labels (symcat base-name "-kick"))
@@ -337,7 +348,7 @@
 
 (defn skill-and-weapon-panel
   [ch factories tp]
-  (let [weapon-dp (trait-display-panel ch)
+  (let [weapon-dp (impact-display-panel ch)
         skill-panel (trait-panel ch factories tp weapon-dp)]
     [skill-panel weapon-dp]))
                      
