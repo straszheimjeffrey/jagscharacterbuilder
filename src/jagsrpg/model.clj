@@ -17,7 +17,7 @@
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
   (:use [clojure.contrib.str-utils :only (re-split str-join)])
-  (:use [clojure.contrib.seq-utils :only (seek)])
+  (:use [clojure.contrib.seq-utils :only (find-first)])
   (:use [clojure.contrib.math :only (round)]))
 
 
@@ -162,7 +162,7 @@
   (let [stats (:primary-stats ch)
         match (fn [m]
                 (= name (-> m :cell :name)))]
-    (seek match stats)))
+    (find-first match stats)))
   
 (defn build-character
   "Returns a jags-character"

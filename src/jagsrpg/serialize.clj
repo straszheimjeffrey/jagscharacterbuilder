@@ -20,7 +20,7 @@
   (:use jagsrpg.skills)
   (:use jagsrpg.archetype)
   (:use clojure.contrib.dataflow)
-  (:use [clojure.contrib.seq-utils :only (seek)]))
+  (:use [clojure.contrib.seq-utils :only (find-first)]))
 
 (defn serialize-character
   "Given a character, extract the data needed to rebuild it"
@@ -45,7 +45,7 @@
   (let [ch (build-character)]
     (do (doseq [td (:traits ser)]
           (let [col (type-to-trait-collection (second td))
-                factory (seek #(= (first td) (:name %)) col)
+                factory (find-first #(= (first td) (:name %)) col)
                 tr ((:make factory))]
             (add-trait ch tr)))
         (update-values (:model ch) (:source-cells ser))

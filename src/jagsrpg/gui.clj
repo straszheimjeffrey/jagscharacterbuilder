@@ -22,7 +22,7 @@
   (:use jagsrpg.archetype)
   (:use jagsrpg.serialize)
   (:use clojure.contrib.dataflow)
-  (:use [clojure.contrib.seq-utils :only (seek)])
+  (:use [clojure.contrib.seq-utils :only (find-first)])
   (:use [clojure.contrib.duck-streams :only (writer)]))
 
 (import '(java.io File
@@ -248,7 +248,8 @@
 
 (defn impact-display-panel
   [ch]
-  (let [panel (trait-display-panel ch)
+  (let [layout (MigLayout. "" "[][sg d, align 50%]")
+        panel (JPanel. layout)
         labels (map label impact-names)]
     (do (.add panel (label "Name"))
         (doseq [label (butlast labels)]
@@ -321,7 +322,7 @@
          (proxy [ActionListener] []
            (actionPerformed [evt]
                   (let [n (.getSelectedValue list)
-                        f (seek #(= n (:name %)) factories)]
+                        f (find-first #(= n (:name %)) factories)]
                     (when f
                       (let [tr ((:make f))]
                         (do
