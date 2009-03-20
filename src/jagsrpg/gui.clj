@@ -34,6 +34,7 @@
                       SpinnerNumberModel
                       JLabel
                       JList
+                      JTextField
                       DefaultListModel
                       ListSelectionModel
                       JButton
@@ -48,7 +49,8 @@
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
                          WindowAdapter)
-        '(javax.swing.event ChangeListener)
+        '(javax.swing.event ChangeListener
+                            DocumentListener)
         '(java.awt FlowLayout)
         '(net.miginfocom.swing MigLayout))
 
@@ -126,10 +128,34 @@
                                                   {(-> modifiable :cell :name)
                                                    cur-gui})
                                    (catch Exception e
-                                     (do (.setValue spinner cur-m)
-                                         (.printStackTrace e)))))))))
+                                     (.setValue spinner cur-m))))))))
     spinner))
 
+(defn tied-text-box
+  "Build a text box that updates a cell"
+  [ch stat width]
+  (let [cell (get-cell (:model ch) stat)
+        init (get-value-from-cell cell)
+        text-box (JTextField. init width)
+        document (.getDocument text-box)
+        content-changed (fn []
+                          (let [cur-m (get-value-from-cell cell)
+                                cur-gui (.getText text-box)]
+                            (when (not= cur-m cur-gui)
+                              (try
+                               (update-values (:model ch)
+                                              {(:name cell) cur-gui})
+                               (catch Exception e
+                                 (SwingUtilities/invokeLater
+                                  (fn []
+                                    (.setText text-box cur-m))))))))]
+    (do
+      (.addDocumentListener document
+                            (proxy [DocumentListener] []
+                              (changeUpdate [evt] (content-changed))
+                              (removeUpdate [evt] (content-changed))
+                              (insertUpdate [evt] (content-changed))))
+      text-box)))
 
 ;;; Top panels
 
@@ -138,6 +164,8 @@
   (let [layout (MigLayout.)
         panel (JPanel. layout)]
     (doto panel
+      (.add (label "Name"))
+      (.add (tied-text-box ch 'name 15))
       (.add (label "CP Cost"))
       (.add (tied-label ch 'total-cp-cost))
       (.add (label "AP Cost"))
@@ -274,8 +302,9 @@
   (let [labels (for [sym (:symbols w)]
                  (if (= sym (:main-name w))
                    (tied-spinner ch (-> w :modifiables first))
-                   (tied-label ch sym)))]
-    (do (.add dp (tied-label (:name-cell w)))
+                   (tied-label ch sym)))
+        n (tied-text-box ch (-> w :name-cell :name) 6)]
+    (do (.add dp n)
         (doseq [lab (butlast labels)]
           (.add dp lab))
         (.add dp (last labels) "wrap")

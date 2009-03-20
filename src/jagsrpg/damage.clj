@@ -146,7 +146,6 @@
                    :modifiables [mod#]
                    :cost nil
                    :add (fn [ch#]
-                          (println cells#)
                           (dosync (add-modifiable ch# mod#)
                                   (add-cells ch# cells#)))
                    :remove (fn [ch#]
@@ -161,7 +160,7 @@
 (defmacro make-weapons
   [t]
   (vec
-   (for [n (range 32)]
+   (for [n (range 64)]
      (let [n (symcat "wpn-" t "-" n)]
        `(make-weapon ~t ~n)))))
   
