@@ -19,6 +19,7 @@
   (:use jagsrpg.secondary)
   (:use jagsrpg.skills)
   (:use jagsrpg.archetype)
+  (:use jagsrpg.damage)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)]))
 
@@ -37,7 +38,9 @@
            :trait standard-traits
            :secondary secondary-traits
            :skill skills
-           :archetype archetypes))
+           :archetype archetypes
+           :impact-weapons impact-weapons
+           :penetrating-weapons penetrating-weapons))
 
 (defn deserialize-character
   "Given a form built by serialize-character, make a character again"

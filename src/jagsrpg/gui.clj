@@ -43,6 +43,7 @@
                       JScrollPane
                       JTabbedPane
                       JFileChooser
+                      JSplitPane
                       SwingUtilities)
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener)
@@ -59,6 +60,27 @@
   [panel]
   (let [sp (JScrollPane. panel)]
     sp))
+
+(defn v-split
+  [p1 p2]
+  (let [sp (JSplitPane. JSplitPane/VERTICAL_SPLIT
+                        p1
+                        p2)]
+    (doto sp
+      (.setResizeWeight 0.5))))
+
+(defn validate-to-top
+  [com]
+  (.invalidate com)
+  ;(.validate com)
+  (println (class com))
+  (if (isa? (class com) javax.swing.JFrame)
+    (do (println "tree")
+        (.validate com))
+    (.revalidate com))
+  (let [p (.getParent com)]
+    (when p
+      (recur p))))
 
 
 ;;; Components tied to model objects
@@ -229,7 +251,7 @@
 
 (defn top-panel
   [ch]
-  (let [layout (MigLayout. "wrap 2")
+  (let [layout (MigLayout. "wrap 2" "[].1in[]" "[].1in[]")
         panel (JPanel. layout)]
     (doto panel
       (.add (cost-panel ch) "sx 2")
@@ -246,16 +268,44 @@
         panel (JPanel. layout)]
     panel))
 
-(defn impact-display-panel
-  [ch]
-  (let [layout (MigLayout. "" "[][sg d, align 50%]")
+(defn add-weapon-to-gui
+  [ch dp w]
+  (let [labels (for [sym (:symbols w)]
+                 (if (= sym (:main-name w))
+                   (tied-spinner ch (-> w :modifiables first))
+                   (tied-label ch sym)))]
+    (do (.add dp (tied-label (:name-cell w)))
+        (doseq [lab (butlast labels)]
+          (.add dp lab))
+        (.add dp (last labels) "wrap")
+        (validate-to-top dp))))
+
+(defn weapon-display-panel
+  [ch names]
+  (let [layout (MigLayout. "" "[].1in[.2in:n:n, align 50%]")
         panel (JPanel. layout)
-        labels (map label impact-names)]
+        labels (map label names)]
     (do (.add panel (label "Name"))
         (doseq [label (butlast labels)]
           (.add panel label))
         (.add panel (last labels) "wrap")
         panel)))
+
+(defn weapon-panel
+  [ch names weapons]
+  (let [layout (MigLayout. "wrap 1")
+        panel (JPanel. layout)
+        dp (weapon-display-panel ch names)
+        button (JButton. "Add")]
+    (do (.add panel (scroll dp))
+        (.add panel button)
+        (.addActionListener button
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                         (let [nw ((:make (get-weapon weapons @(:traits ch))))]
+                           (add-trait ch nw)
+                           (add-weapon-to-gui ch dp nw)))))
+        [panel dp])))
 
 (defn add-trait-to-gui
   ([ch dp trait] (add-trait-to-gui ch dp trait (fn [] nil) (fn [] nil)))
@@ -278,7 +328,9 @@
                                               (doseq [s sps] (.remove dp s))
                                               (.remove dp c)
                                               (.remove dp d)
-                                              (extra-removes)))))))
+                                              (extra-removes)
+                                              (validate-to-top dp))))
+       (validate-to-top dp))))
 
 (defn add-hth-skill-to-gui
   [ch dp trait dam-dp]
@@ -351,19 +403,21 @@
 
 (defn skill-and-weapon-panel
   [ch factories tp]
-  (let [weapon-dp (impact-display-panel ch)
-        skill-panel (trait-panel ch factories tp weapon-dp)]
-    [skill-panel weapon-dp]))
+  (let [[ip idp] (weapon-panel ch impact-names impact-weapons)
+        skill-panel (trait-panel ch factories tp idp)]
+    [skill-panel ip]))
                      
 (defn bottom-panel
   [ch]
-  (let [[skill-panel weap-panel] (skill-and-weapon-panel ch skills :skill)]
+  (let [[skill-panel weap-panel] (skill-and-weapon-panel ch skills :skill)
+        [pp _] (weapon-panel ch penetrating-names penetrating-weapons)]
     (doto (JTabbedPane.)
       (.add "Secondary" (trait-panel ch secondary-traits :secondary nil))
       (.add "Skills" skill-panel)
       (.add "Traits" (trait-panel ch standard-traits :trait nil))
       (.add "Archetypes" (trait-panel ch archetypes :archetype nil))
-      (.add "Weapons" weap-panel))))
+      (.add "Impact" (scroll weap-panel))
+      (.add "Penetrating" pp))))
 
 
 ;;; Menu Operations
@@ -448,7 +502,7 @@
 
 (defn show-frame
   [ch]
-  (let [layout (MigLayout. "fill, wrap 1")
+  (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
