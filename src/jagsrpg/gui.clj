@@ -72,11 +72,9 @@
 (defn validate-to-top
   [com]
   (.invalidate com)
-  ;(.validate com)
-  (println (class com))
+  (.repaint com)
   (if (isa? (class com) javax.swing.JFrame)
-    (do (println "tree")
-        (.validate com))
+    (.validate com)
     (.revalidate com))
   (let [p (.getParent com)]
     (when p
