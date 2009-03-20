@@ -39,8 +39,8 @@
            :secondary secondary-traits
            :skill skills
            :archetype archetypes
-           :impact-weapons impact-weapons
-           :penetrating-weapons penetrating-weapons))
+           :impact-weapon impact-weapons
+           :penetrating-weapon penetrating-weapons))
 
 (defn deserialize-character
   "Given a form built by serialize-character, make a character again"

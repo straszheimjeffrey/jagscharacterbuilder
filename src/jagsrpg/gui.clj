@@ -69,6 +69,7 @@
     (doto sp
       (.setResizeWeight 0.5))))
 
+; The following crap just should not be necessary!
 (defn validate-to-top
   [com]
   (.invalidate com)
@@ -290,11 +291,12 @@
         panel)))
 
 (defn weapon-panel
-  [ch names weapons]
+  [ch names weapons t]
   (let [layout (MigLayout. "wrap 1")
         panel (JPanel. layout)
         dp (weapon-display-panel ch names)
-        button (JButton. "Add")]
+        button (JButton. "Add")
+        ws (filter #(= t (:type %)) @(:traits ch))]
     (do (.add panel (scroll dp))
         (.add panel button)
         (.addActionListener button
@@ -303,6 +305,9 @@
                          (let [nw ((:make (get-weapon weapons @(:traits ch))))]
                            (add-trait ch nw)
                            (add-weapon-to-gui ch dp nw)))))
+        (doseq [w ws]
+          (add-trait ch w)
+          (add-weapon-to-gui ch dp w))
         [panel dp])))
 
 (defn add-trait-to-gui
@@ -401,14 +406,20 @@
 
 (defn skill-and-weapon-panel
   [ch factories tp]
-  (let [[ip idp] (weapon-panel ch impact-names impact-weapons)
+  (let [[ip idp] (weapon-panel ch
+                               impact-names
+                               impact-weapons
+                               :impact-weapon)
         skill-panel (trait-panel ch factories tp idp)]
     [skill-panel ip]))
                      
 (defn bottom-panel
   [ch]
   (let [[skill-panel weap-panel] (skill-and-weapon-panel ch skills :skill)
-        [pp _] (weapon-panel ch penetrating-names penetrating-weapons)]
+        [pp _] (weapon-panel ch
+                             penetrating-names
+                             penetrating-weapons
+                             :penetrating-weapon)]
     (doto (JTabbedPane.)
       (.add "Secondary" (trait-panel ch secondary-traits :secondary nil))
       (.add "Skills" skill-panel)
