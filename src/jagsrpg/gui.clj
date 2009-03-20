@@ -303,11 +303,21 @@
                  (if (= sym (:main-name w))
                    (tied-spinner ch (-> w :modifiables first))
                    (tied-label ch sym)))
-        n (tied-text-box ch (-> w :name-cell :name) 6)]
+        n (tied-text-box ch (-> w :name-cell :name) 6)
+        d (JButton. "Delete")]
     (do (.add dp n)
-        (doseq [lab (butlast labels)]
+        (doseq [lab labels]
           (.add dp lab))
-        (.add dp (last labels) "wrap")
+        (.add dp d "wrap")
+        (.addActionListener d
+                   (proxy [ActionListener] []
+                     (actionPerformed [evt]
+                            (remove-trait ch w)
+                            (.remove dp n)
+                            (doseq [lab labels]
+                              (.remove dp lab))
+                            (.remove dp d)
+                            (validate-to-top dp))))
         (validate-to-top dp))))
 
 (defn weapon-display-panel
