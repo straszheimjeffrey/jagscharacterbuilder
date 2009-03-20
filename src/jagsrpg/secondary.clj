@@ -51,8 +51,7 @@
     `(struct-map trait-factory
          :name ~display-name
          :make (fn []
-                 (let [main-cell# (cell :source ~cell-name 1)
-                       modifiable# (make-modifiable ~cell-name [1 2] 1)
+                 (let [modifiable# (make-modifiable ~cell-name [1 2] 1)
                        cost-cell# (cell ~'cp-cost
                                         (secondary-cost ~(var-from-name cell-name)
                                                         ~(var-from-name primary)
