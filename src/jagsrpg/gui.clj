@@ -46,11 +46,13 @@
                       JSplitPane
                       SwingUtilities)
         '(javax.swing.filechooser FileFilter)
-        '(java.awt.event ActionListener)
+        '(java.awt.event ActionListener
+                         WindowAdapter)
         '(javax.swing.event ChangeListener)
         '(java.awt FlowLayout)
         '(net.miginfocom.swing MigLayout))
 
+(def frame-count (atom 0))
 
 (defn label
   [t]
@@ -511,12 +513,18 @@
 
 (defn show-frame
   [ch]
+  (swap! frame-count inc)
   (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")
         frame (JFrame. "Jags Character")]
     (doto frame
       (.setLayout layout)
       (add-menu-bar ch)
       (add-character-to-frame ch)
+      (.setDefaultCloseOperation JFrame/DISPOSE_ON_CLOSE)
+      (.addWindowListener (proxy [WindowAdapter] []
+                            (windowClosed [evt]
+                                          (when (= 0 (swap! frame-count dec))
+                                            (. java.lang.System (exit 0))))))
       (.setVisible true)
       (.show))))
            
@@ -524,6 +532,8 @@
 (comment
 
   (def character (build-character))
+  (swap! frame-count inc)
+  @frame-count
 
   (show-frame character)
   (print-dataflow (:model character))
