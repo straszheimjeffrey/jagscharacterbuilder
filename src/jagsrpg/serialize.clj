@@ -20,6 +20,7 @@
   (:use jagsrpg.skills)
   (:use jagsrpg.archetype)
   (:use jagsrpg.damage)
+  (:use jagsrpg.custom)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)]))
 
@@ -40,7 +41,8 @@
            :skill skills
            :archetype archetypes
            :impact-weapon impact-weapons
-           :penetrating-weapon penetrating-weapons))
+           :penetrating-weapon penetrating-weapons
+           :custom custom-traits))
 
 (defn deserialize-character
   "Given a form built by serialize-character, make a character again"
