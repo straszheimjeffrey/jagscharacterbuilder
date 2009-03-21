@@ -653,6 +653,12 @@
           (binding [*out* w]
             (print (html-page ch))))))))
 
+(declare window-closing)
+
+(defn close-frame
+  [fr ch original]
+  (window-closing fr ch original))
+
 (defn add-menu-bar
   [fr ch original]
   (let [bar (JMenuBar.)
@@ -660,7 +666,8 @@
         menu-new (JMenuItem. "New")
         menu-open (JMenuItem. "Open")
         menu-save (JMenuItem. "Save")
-        menu-html (JMenuItem. "as HTML")]
+        menu-html (JMenuItem. "as HTML")
+        menu-close (JMenuItem. "Close")]
     (do
       (.addActionListener menu-new
                  (proxy [ActionListener] []
@@ -678,11 +685,16 @@
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                             (save-character-as-html fr ch))))
+      (.addActionListener menu-close
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                            (close-frame fr ch original))))
       (.add bar file)
       (.add file menu-new)
       (.add file menu-open)
       (.add file menu-save)
       (.add file menu-html)
+      (.add file menu-close)
       (.setJMenuBar fr bar))))
 
 
@@ -703,7 +715,7 @@
     (.dispose fr)
     (let [choice (JOptionPane/showOptionDialog
                   fr
-                  "Your character has been modified"
+                  "Your character has been modified."
                   "Save?"
                   JOptionPane/YES_NO_CANCEL_OPTION
                   JOptionPane/WARNING_MESSAGE
@@ -711,9 +723,9 @@
                   (to-array ["Close" "Save" "Cancel"])
                   0)]
       (condp = choice
-               0 (do (save-character fr ch)
+               0 (.dispose fr)
+               1 (do (save-character fr ch)
                      (.dispose fr))
-               1 (.dispose fr)
                2 nil))))
 
 (defn- window-closed
