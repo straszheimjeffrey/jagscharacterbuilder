@@ -22,6 +22,7 @@
   (:use jagsrpg.archetype)
   (:use jagsrpg.custom)
   (:use jagsrpg.serialize)
+  (:use jagsrpg.html)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)])
   (:use [clojure.contrib.duck-streams :only (writer)]))
@@ -604,6 +605,11 @@
                           (.matches (.getName f) ".*\\.jags$"))
                   (getDescription [] "JAGS Characters")))
 
+(def html-file-filer (proxy [FileFilter] []
+                       (accept [f]
+                               (.matches (.getName f) ".*\\.html$"))
+                       (getDescription [] "HTML Document")))
+
 (defn new-character
   [fr ch]
   (show-frame (build-character)))
@@ -639,6 +645,22 @@
           (binding [*out* w]
             (pr (serialize-character ch))))))))
 
+(defn save-character-as-html
+  [fr ch]
+  (let [chooser (JFileChooser.)
+        cm (-> ch :model (get-cell 'name) :value deref)]
+    (.setFileFilter chooser html-file-filter)
+    (.setSelectedFile chooser (File. (str cm ".html")))
+    (let [result (.showSaveDialog chooser fr)
+          fix-name (fn [n]
+                     (if (.accept html-file-filter n)
+                       n
+                       (File. (str (.getPath n) ".html"))))]
+      (when (= result JFileChooser/APPROVE_OPTION)
+        (with-open [w (writer (fix-name (.getSelectedFile chooser)))]
+          (binding [*out* w]
+            (pr (html-page ch))))))))
+
 (defn add-menu-bar
   [fr ch]
   (let [bar (JMenuBar.)
@@ -646,6 +668,7 @@
         menu-new (JMenuItem. "New")
         menu-open (JMenuItem. "Open")
         menu-save (JMenuItem. "Save")
+        menu-html (JMenuItem. "as HTML")
         old (serialize-character ch)]
     (do
       (.addActionListener menu-new
@@ -660,10 +683,15 @@
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                             (save-character fr ch))))
+      (.addActionListener menu-html
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                            (save-character-as-html fr ch))))
       (.add bar file)
       (.add file menu-new)
       (.add file menu-open)
       (.add file menu-save)
+      (.add file menu-html)
       (.setJMenuBar fr bar))))
 
 

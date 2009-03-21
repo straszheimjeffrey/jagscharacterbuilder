@@ -180,7 +180,7 @@
     (println cl))
 
   (first impact-weapons)
-
+  (get-impact-symbols 'fred)
   (damage-chart impact-def 'mary)
 
   (def ch (build-character))
