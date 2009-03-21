@@ -592,6 +592,21 @@
 
 ;;; Menu Operations
 
+(def checkpoint-property "jags-character-checkpoint")
+
+(defn character-changed?
+  [fr ch]
+  (let [cp (.getContentPane fr)
+        saved-char (.getClientProperty cp checkpoint-property)
+        cur-serial (serialize-character ch)]
+    (not= saved-char cur-serial)))
+
+(defn checkpoint-character
+  [fr ch]
+  (let [cp (.getContentPane fr)
+        cur-serial (serialize-character ch)]
+    (.putClientProperty cp checkpoint-property cur-serial)))
+
 (def file-filter (proxy [FileFilter] []
                   (accept [f]
                           (.matches (.getName f) ".*\\.jags$"))
@@ -609,7 +624,7 @@
   (show-frame (build-character)))
 
 (defn open-character
-  [fr ch original]
+  [fr ch]
   (let [chooser (JFileChooser.)]
     (do
       (.setFileFilter chooser file-filter)
@@ -618,9 +633,9 @@
           (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
             (let [n (read r)
                   nch (deserialize-character n)]
-              (if (= original (serialize-character ch))
-                (show-frame nch fr)
-                (show-frame nch)))))))))
+              (if (character-changed? fr ch)
+                (show-frame nch)
+                (show-frame nch fr)))))))))
               
 (defn save-character
   [fr ch]
@@ -637,6 +652,7 @@
         (do (with-open [w (writer (fix-name (.getSelectedFile chooser)))]
               (binding [*out* w]
                 (pr (serialize-character ch))))
+            (checkpoint-character fr ch)
             true)
         false))))
 
@@ -659,11 +675,11 @@
 (declare window-closing)
 
 (defn close-frame
-  [fr ch original]
-  (window-closing fr ch original))
+  [fr ch]
+  (window-closing fr ch))
 
 (defn add-menu-bar
-  [fr ch original]
+  [fr ch]
   (let [bar (JMenuBar.)
         file (JMenu. "File")
         menu-new (JMenuItem. "New")
@@ -679,7 +695,7 @@
       (.addActionListener menu-open
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
-                            (open-character fr ch original))))
+                            (open-character fr ch))))
       (.addActionListener menu-save
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
@@ -691,7 +707,7 @@
       (.addActionListener menu-close
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
-                            (close-frame fr ch original))))
+                            (close-frame fr ch))))
       (.add bar file)
       (.add file menu-new)
       (.add file menu-open)
@@ -710,12 +726,12 @@
           (.removeAll)
           (.add (top-panel ch))
           (.add (bottom-panel ch fr)))
-        (.pack fr))))
+        (.pack fr)
+        (checkpoint-character fr ch))))
 
 (defn- window-closing
-  [fr ch original]
-  (if (= (serialize-character ch) original)
-    (.dispose fr)
+  [fr ch]
+  (if (character-changed? fr ch)
     (let [choice (JOptionPane/showOptionDialog
                   fr
                   "Your character has been modified."
@@ -729,7 +745,8 @@
                0 (.dispose fr)
                1 (do (when (save-character fr ch)
                        (.dispose fr)))
-               2 nil))))
+               2 nil))
+    (.dispose fr)))
 
 (defn- window-closed
   []
@@ -741,17 +758,16 @@
      (swap! frame-count inc)
      (show-frame ch (JFrame. "Jags Character")))
   ([ch frame]
-     (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")
-           original (serialize-character ch)]
+     (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")]
        (do (doseq [l (.getListeners frame WindowListener)]
              (.removeWindowListener frame l))
            (doto frame
              (.setLayout layout)
-             (add-menu-bar ch original)
+             (add-menu-bar ch)
              (add-character-to-frame ch)
              (.setDefaultCloseOperation JFrame/DO_NOTHING_ON_CLOSE)
              (.addWindowListener (proxy [WindowAdapter] []
-                        (windowClosing [evt] (window-closing frame ch original))
+                        (windowClosing [evt] (window-closing frame ch))
                         (windowClosed [evt] (window-closed))))
              (.setVisible true)
              (.show))))))
