@@ -89,7 +89,7 @@
   (let [tr-n (:symb-name tr)
         step (fn [n]
                (if (symbol? n)
-                 (symcat tr-n "-" n)
+                 [(make-display-name n) (symcat tr-n "-" n)]
                  n))]
     (map step custom-mods)))
 

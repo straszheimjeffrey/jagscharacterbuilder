@@ -20,6 +20,7 @@
   (:use jagsrpg.skills)
   (:use jagsrpg.traits)
   (:use jagsrpg.archetype)
+  (:use jagsrpg.custom)
   (:use jagsrpg.serialize)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)])
@@ -291,11 +292,68 @@
 
 ;;; Bottom Panels
 
-(defn trait-display-panel
+;; Custom Traits
+
+
+(defn add-custom-to-gui
+  [ch dp ct]
+  (let [ct-name (:symb-name ct)
+        name-label (tied-label ch (symcat ct-name "-name"))
+        cp-label (tied-label ch (symcat ct-name "-cp-cost"))
+        ap-label (tied-label ch (symcat ct-name "-ap-cost"))
+        eb (JButton. "Edit")
+        db (JButton. "Delete")]
+    (do (.add dp name-label)
+        (.add dp cp-label)
+        (.add dp ap-label)
+        (.add dp eb)
+        (.add dp db "wrap")
+        (.addActionListener eb
+                  (proxy [ActionListener] []
+                    (actionPerformed [evt])))
+        (.addActionListener db
+                  (proxy [ActionListener] []
+                    (actionPerformed [evt]
+                           (remove-trait ch ct)
+                           (.remove dp name-label)
+                           (.remove dp cp-label)
+                           (.remove dp ap-label)
+                           (.remove dp eb)
+                           (.remove dp db)
+                           (validate-to-top dp))))
+        (validate-to-top dp))))
+    
+(defn custom-display-panel
   [ch]
-  (let [layout (MigLayout.)
+  (let [layout (MigLayout. "" "[].2in[]")
         panel (JPanel. layout)]
-    panel))
+    (doto panel
+      (.add (label "Name"))
+      (.add (label "CP Cost"))
+      (.add (label "AP Cost") "wrap"))))
+
+(defn custom-panel
+  [ch]
+  (let [layout (MigLayout. "wrap 1")
+        panel (JPanel. layout)
+        dp (custom-display-panel ch)
+        button (JButton. "Add")
+        cts (filter #(= :custom (:type %)) @(:traits ch))]
+    (do (.add panel (scroll dp))
+        (.add panel button)
+        (.addActionListener button
+                            (proxy [ActionListener] []
+                              (actionPerformed [evt]
+                                    (let [nct ((:make (get-custom-trait @(:traits ch))))]
+                                      (add-trait ch nct)
+                                      (add-custom-to-gui ch dp nct)))))
+        (doseq [ct cts]
+          (add-trait ch ct)
+          (add-custom-to-gui ch dp ct))
+        panel)))
+
+
+;; Weapons stuff
 
 (defn add-weapon-to-gui
   [ch dp w]
@@ -351,6 +409,9 @@
           (add-weapon-to-gui ch dp w))
         [panel dp])))
 
+
+;; Trait and skill addition
+
 (defn add-trait-to-gui
   ([ch dp trait] (add-trait-to-gui ch dp trait (fn [] nil) (fn [] nil)))
   ([ch dp trait extra-adds extra-removes]
@@ -400,7 +461,9 @@
                           (remove-one-set kick-labels)))]
     (add-trait-to-gui ch dp trait add remove)))
   
-  
+
+;; Standard bottom panels
+
 (defn trait-selection-list
   [ch factories dp extra]
   (let [lm (DefaultListModel.)
@@ -430,6 +493,12 @@
           (.add (scroll list))
           (.add button)))))
   
+(defn trait-display-panel
+  [ch]
+  (let [layout (MigLayout.)
+        panel (JPanel. layout)]
+    panel))
+
 (defn trait-panel
   [ch factories tp extra]
   (let [dp (trait-display-panel ch)
@@ -467,7 +536,8 @@
       (.add "Traits" (trait-panel ch standard-traits :trait nil))
       (.add "Archetypes" (trait-panel ch archetypes :archetype nil))
       (.add "Impact" (scroll weap-panel))
-      (.add "Penetrating" pp))))
+      (.add "Penetrating" pp)
+      (.add "Custom" (custom-panel ch)))))
 
 
 ;;; Menu Operations
