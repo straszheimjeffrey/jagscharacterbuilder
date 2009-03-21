@@ -41,7 +41,10 @@
   (if m
     (apply str
            (for [[k v] m]
-             (str " " (name k) "=\"" v "\"")))
+             (let [nm (if (string? k)
+                        k
+                        (name k))]
+               (str " " nm "=\"" v "\""))))
     ""))
 
 (defmacro html*
@@ -158,20 +161,20 @@
 
 (defn- traits-panel
   [ch]
-  (let [trs (filter #(or (= :secondary %)
-                         (= :trait %)) @(:traits ch))
+  (let [trs (filter #(or (= :secondary (:type %))
+                         (= :trait (:type %))) @(:traits ch))
         tr-html (apply str (map trait-row trs))]
     (html (table {:id "traits"} tr-html))))
 
 (defn- a-traits-panel
   [ch]
-  (let [trs (filter #(= :archetype %) @(:traits ch))
+  (let [trs (filter #(= :archetype (:type %)) @(:traits ch))
         tr-html (apply str (map trait-row trs))]
     (html (table {:id "a-traits"} tr-html))))
 
 (defn- skills-panel
   [ch]
-  (let [sks (filter #(= :skill %) @(:traits ch))
+  (let [sks (filter #(= :skill (:type %)) @(:traits ch))
         tr-html (apply str (map skill-row sks))]
     (html (table {:id "skills"} tr-html))))
 
@@ -243,6 +246,26 @@
         rws (apply str (map (partial custom-row ch) ctrs))]
     (html (table {:id "custom-traits"} rws))))
 
+(defn styles
+  [& body]
+  (let [pairs (partition 2 body)
+        each (fn [[selector styles]]
+               (let [each (fn [[k v]]
+                            (str (if (string? k) k (name k)) ": " v ";\n"))
+                     flat (apply str (map each styles))]
+                 (str selector " {\n" flat "}\n")))]
+    (apply str (map each pairs))))
+        
+(def style
+     (let [styles (styles "td, th" {:vertical-align "top"
+                                    :padding "2px 4px"}
+                          "td" {:text-align "center"})]
+       (html (style {:type "text/css"}
+                    "<!--\n"
+                    styles
+                    "-->"))))
+;(print style)
+
 (defn html-page
   [ch]
   (let [name (-> ch :model (get-value 'name))
@@ -256,34 +279,47 @@
         i-dam (impact-damage-panel ch)
         p-dam (penetrating-damage-panel ch)
         custom (custom-panel ch)]
-    (html (html (head (title name))
-                (body top 
-                      stat
-                      derived
-                      damage
-                      trait
-                      a-trait
-                      skill
-                      i-dam
-                      p-dam
-                      custom)))))
-        
-
+    (dosync
+     (str "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" "
+          "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> "
+          (html (html {:xmlns "http://www.w3.org/1999/xhtml"
+                       :lang "en"
+                       "xml:lang" "en"}
+                      (head (meta {:http-equiv "Content-Type"
+                                   :content "text/html; charset=UTF-8"})
+                            (title name)
+                            style)
+                      (body (div {:id "top-content"}
+                                 (table (tr {:colspan "2"}
+                                            (td top))
+                                        (tr (td stat)
+                                            (td {:rowspan "2"}
+                                                damage))
+                                        (tr (td derived))))
+                            (div {:id "bottom-content"}
+                                 (table (tr (td {:rowspan "3"}
+                                                skill)
+                                            (td trait))
+                                        (tr (td a-trait))
+                                        (tr (td custom)))
+                                 i-dam
+                                 p-dam))))))))
 
 (comment
 
   (let [joe "joe"]
-    (html (html {:fred "mary"} joe)))
+    (html (html {:fred "mary" "sam" "mary"} joe)))
 
   (macroexpand '(stat phy))
 
- ; (def character (build-character))
-  (def character jagsrpg.gui/character)
-  (print-dataflow (:model character))
+  (def character1 (build-character))
+  ;(def character jagsrpg.gui/character)
+  (print-dataflow (:model character1))
+  (:traits character1)
 
-  (html-page character)
+  (html-page character1)
 
-  (trait-row ((:make (first secondary-traits))))
+  (add-trait character1 ((:make (first secondary-traits))))
 
   (use :reload 'jagsrpg.html)
   (use 'clojure.contrib.stacktrace) (e)

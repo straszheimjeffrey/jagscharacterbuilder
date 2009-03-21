@@ -175,6 +175,9 @@
                (cell total-cp-cost (apply + ?*cp-cost))
                (cell total-ap-cost (apply + ?*ap-cost))
 
+               (cell cp-cost (apply + ?*cp-cost-mods))
+               (cell ap-cost (apply + ?*ap-cost-mods))
+
                (primary-stat-cost phy)
                (primary-stat-cost ref)
                (primary-stat-cost int)

@@ -27,11 +27,12 @@
 (defn serialize-character
   "Given a character, extract the data needed to rebuild it"
   [ch]
-  (let [sc (get-source-cells (:model ch))
-        val-map (into {} (map (fn [c] [(:name c) @(:value c)]) sc))
-        traits (map (fn [t] [(:name t) (:type t)]) @(:traits ch))]
-       {:source-cells val-map
-        :traits traits}))
+  (dosync
+   (let [sc (get-source-cells (:model ch))
+         val-map (into {} (map (fn [c] [(:name c) @(:value c)]) sc))
+         traits (map (fn [t] [(:name t) (:type t)]) @(:traits ch))]
+     {:source-cells val-map
+      :traits traits})))
 
 (defn- type-to-trait-collection
   [type]

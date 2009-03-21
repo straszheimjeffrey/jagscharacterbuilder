@@ -659,7 +659,7 @@
       (when (= result JFileChooser/APPROVE_OPTION)
         (with-open [w (writer (fix-name (.getSelectedFile chooser)))]
           (binding [*out* w]
-            (pr (html-page ch))))))))
+            (print (html-page ch))))))))
 
 (defn add-menu-bar
   [fr ch]
