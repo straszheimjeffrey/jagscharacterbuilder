@@ -48,6 +48,7 @@
                       JFileChooser
                       JSplitPane
                       JDialog
+                      JOptionPane
                       SwingUtilities)
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
@@ -590,17 +591,6 @@
 
 ;;; Menu Operations
 
-(defn- add-character-to-frame
-  [fr ch]
-  (let [cp (.getContentPane fr)]
-    (do (doto cp
-          (.removeAll)
-          (.add (top-panel ch))
-          (.add (bottom-panel ch fr)))
-        (.pack fr))))
-
-(declare show-frame)
-
 (def file-filter (proxy [FileFilter] []
                   (accept [f]
                           (.matches (.getName f) ".*\\.jags$"))
@@ -611,12 +601,14 @@
                                (.matches (.getName f) ".*\\.html$"))
                        (getDescription [] "HTML Document")))
 
+(declare show-frame)
+
 (defn new-character
   [fr ch]
   (show-frame (build-character)))
 
 (defn open-character
-  [fr ch old]
+  [fr ch original]
   (let [chooser (JFileChooser.)]
     (do
       (.setFileFilter chooser file-filter)
@@ -625,9 +617,8 @@
           (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
             (let [n (read r)
                   nch (deserialize-character n)]
-              (if (= old (serialize-character ch))
-                (do (add-character-to-frame fr nch)
-                    (.pack fr))
+              (if (= original (serialize-character ch))
+                (show-frame nch fr)
                 (show-frame nch)))))))))
               
 (defn save-character
@@ -663,14 +654,13 @@
             (print (html-page ch))))))))
 
 (defn add-menu-bar
-  [fr ch]
+  [fr ch original]
   (let [bar (JMenuBar.)
         file (JMenu. "File")
         menu-new (JMenuItem. "New")
         menu-open (JMenuItem. "Open")
         menu-save (JMenuItem. "Save")
-        menu-html (JMenuItem. "as HTML")
-        old (serialize-character ch)]
+        menu-html (JMenuItem. "as HTML")]
     (do
       (.addActionListener menu-new
                  (proxy [ActionListener] []
@@ -679,7 +669,7 @@
       (.addActionListener menu-open
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
-                            (open-character fr ch old))))
+                            (open-character fr ch original))))
       (.addActionListener menu-save
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
@@ -698,22 +688,57 @@
 
 ;;; Frame
 
+(defn- add-character-to-frame
+  [fr ch]
+  (let [cp (.getContentPane fr)]
+    (do (doto cp
+          (.removeAll)
+          (.add (top-panel ch))
+          (.add (bottom-panel ch fr)))
+        (.pack fr))))
+
+(defn- window-closing
+  [fr ch original]
+  (if (= (serialize-character ch) original)
+    (.dispose fr)
+    (let [choice (JOptionPane/showOptionDialog
+                  fr
+                  "Your character has been modified"
+                  "Save?"
+                  JOptionPane/YES_NO_CANCEL_OPTION
+                  JOptionPane/WARNING_MESSAGE
+                  nil
+                  (to-array ["Close" "Save" "Cancel"])
+                  0)]
+      (condp = choice
+               0 (do (save-character fr ch)
+                     (.dispose fr))
+               1 (.dispose fr)
+               2 nil))))
+
+(defn- window-closed
+  []
+  (when (= 0 (swap! frame-count dec))
+    (. java.lang.System (exit 0))))
+
 (defn show-frame
-  [ch]
-  (swap! frame-count inc)
-  (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")
-        frame (JFrame. "Jags Character")]
-    (doto frame
-      (.setLayout layout)
-      (add-menu-bar ch)
-      (add-character-to-frame ch)
-      (.setDefaultCloseOperation JFrame/DISPOSE_ON_CLOSE)
-      (.addWindowListener (proxy [WindowAdapter] []
-                            (windowClosed [evt]
-                                          (when (= 0 (swap! frame-count dec))
-                                            (. java.lang.System (exit 0))))))
-      (.setVisible true)
-      (.show))))
+  ([ch] (let [fr (JFrame. "Jags Character")
+              original (serialize-character ch)]
+          (do (swap! frame-count inc)
+              (show-frame ch fr)
+              (.addWindowListener fr (proxy [WindowAdapter] []
+                            (windowClosing [evt] (window-closing fr ch original))
+                            (windowClosed [evt] (window-closed)))))))
+  ([ch frame]
+     (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")
+           original (serialize-character ch)]
+       (doto frame
+         (.setLayout layout)
+         (add-menu-bar ch original)
+         (add-character-to-frame ch)
+         (.setDefaultCloseOperation JFrame/DO_NOTHING_ON_CLOSE)
+         (.setVisible true)
+         (.show)))))
            
 
 (comment
