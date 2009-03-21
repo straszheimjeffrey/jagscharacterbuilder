@@ -364,7 +364,7 @@
         (.addActionListener db
                   (proxy [ActionListener] []
                     (actionPerformed [evt]
-                           (remove-trait ch ct)
+                           (remove-traits ch [ct])
                            (.remove dp name-label)
                            (.remove dp cp-label)
                            (.remove dp ap-label)
@@ -395,10 +395,9 @@
                             (proxy [ActionListener] []
                               (actionPerformed [evt]
                                     (let [nct ((:make (get-custom-trait @(:traits ch))))]
-                                      (add-trait ch nct)
+                                      (add-traits ch [nct])
                                       (add-custom-to-gui ch fr dp nct)))))
         (doseq [ct cts]
-          (add-trait ch ct)
           (add-custom-to-gui ch fr dp ct))
         panel)))
 
@@ -420,7 +419,7 @@
         (.addActionListener d
                    (proxy [ActionListener] []
                      (actionPerformed [evt]
-                            (remove-trait ch w)
+                            (remove-traits ch [w])
                             (.remove dp n)
                             (doseq [lab labels]
                               (.remove dp lab))
@@ -452,10 +451,9 @@
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                          (let [nw ((:make (get-weapon weapons @(:traits ch))))]
-                           (add-trait ch nw)
+                           (add-traits ch [nw])
                            (add-weapon-to-gui ch dp nw)))))
         (doseq [w ws]
-          (add-trait ch w)
           (add-weapon-to-gui ch dp w))
         [panel dp])))
 
@@ -469,7 +467,6 @@
            sps (map (partial tied-spinner ch) (:modifiables trait))
            c (tied-label (:cost trait))
            d (JButton. "Delete")]
-       (add-trait ch trait)
        (.add dp nl)
        (doseq [s sps] (.add dp s))
        (.add dp c)
@@ -478,7 +475,7 @@
        (.addActionListener d
                            (proxy [ActionListener] []
                              (actionPerformed [evt]
-                                              (remove-trait ch trait)
+                                              (remove-traits ch [trait])
                                               (.remove dp nl)
                                               (doseq [s sps] (.remove dp s))
                                               (.remove dp c)
@@ -535,6 +532,7 @@
                     (when f
                       (let [tr ((:make f))]
                         (do
+                          (add-traits ch [tr])
                           (if (:hth tr)
                             (add-hth-skill-to-gui ch dp tr extra)
                             (add-trait-to-gui ch dp tr))
