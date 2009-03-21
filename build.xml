@@ -55,6 +55,7 @@
       <arg value="jagsrpg.custom"/>
       <arg value="jagsrpg.gui"/>
       <arg value="jagsrpg.serialize"/>
+      <arg value="jagsrpg.html"/>
       <arg value="jagsrpg.main"/>
     </java>
   </target>
