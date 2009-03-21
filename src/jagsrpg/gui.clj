@@ -46,6 +46,7 @@
                       JTabbedPane
                       JFileChooser
                       JSplitPane
+                      JDialog
                       SwingUtilities)
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
@@ -85,6 +86,13 @@
   (let [p (.getParent com)]
     (when p
       (recur p))))
+
+(defn find-frame
+  [com]
+  (let [p (.getParent com)]
+    (if p
+      (recur p)
+      p)))
 
 
 ;;; Components tied to model objects
@@ -292,25 +300,64 @@
 
 ;;; Bottom Panels
 
+;; Custom Trait Dialog
+
+(defn custom-dialog
+  [ch fr ct]
+  (let [dia (JDialog. fr)
+        cp (.getContentPane dia)
+        layout (MigLayout.)
+        panel (JPanel. layout)
+        n (:symb-name ct)
+        nm (tied-text-box ch (symcat n "-name") 30)
+        sl (get-source-list ct)
+        step (fn [mod]
+               [(-> mod :cell :name) mod])
+        mod-map (into {} (map step (:modifiables ct)))
+        cb (JButton. "Close")]
+    (do (.setLayout panel layout)
+        (.add panel (label "Optional Trait") "sx 5, wrap")
+        (.add panel nm "sx 5, wrap")
+        (loop [f (first sl)
+               n (next sl)
+               m (fnext sl)]
+          (when f
+            (when (-> f keyword? not)
+              (do (.add panel (label (first f)) "right")
+                  (if (= m :break)
+                    (.add panel (tied-spinner ch (mod-map (second f))) "wrap")
+                    (.add panel (tied-spinner ch (mod-map (second f)))))))
+            (recur (first n) (next n) (fnext n))))
+        (.add panel cb "wrap")
+        (.addActionListener cb
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                           (.setVisible dia false))))
+        (.add cp (scroll panel))
+        dia)))
+
+
 ;; Custom Traits
 
-
 (defn add-custom-to-gui
-  [ch dp ct]
+  [ch fr dp ct]
   (let [ct-name (:symb-name ct)
         name-label (tied-label ch (symcat ct-name "-name"))
         cp-label (tied-label ch (symcat ct-name "-cp-cost"))
         ap-label (tied-label ch (symcat ct-name "-ap-cost"))
         eb (JButton. "Edit")
-        db (JButton. "Delete")]
+        db (JButton. "Delete")
+        dia (custom-dialog ch fr ct)]
     (do (.add dp name-label)
-        (.add dp cp-label)
         (.add dp ap-label)
+        (.add dp cp-label)
         (.add dp eb)
         (.add dp db "wrap")
         (.addActionListener eb
                   (proxy [ActionListener] []
-                    (actionPerformed [evt])))
+                    (actionPerformed [evt]
+                            (.pack dia)
+                            (.setVisible dia true))))
         (.addActionListener db
                   (proxy [ActionListener] []
                     (actionPerformed [evt]
@@ -329,11 +376,11 @@
         panel (JPanel. layout)]
     (doto panel
       (.add (label "Name"))
-      (.add (label "CP Cost"))
-      (.add (label "AP Cost") "wrap"))))
+      (.add (label "AP Cost"))
+      (.add (label "CP Cost") "wrap"))))
 
 (defn custom-panel
-  [ch]
+  [ch fr]
   (let [layout (MigLayout. "wrap 1")
         panel (JPanel. layout)
         dp (custom-display-panel ch)
@@ -346,10 +393,10 @@
                               (actionPerformed [evt]
                                     (let [nct ((:make (get-custom-trait @(:traits ch))))]
                                       (add-trait ch nct)
-                                      (add-custom-to-gui ch dp nct)))))
+                                      (add-custom-to-gui ch fr dp nct)))))
         (doseq [ct cts]
           (add-trait ch ct)
-          (add-custom-to-gui ch dp ct))
+          (add-custom-to-gui ch fr dp ct))
         panel)))
 
 
@@ -524,7 +571,7 @@
     [skill-panel ip]))
                      
 (defn bottom-panel
-  [ch]
+  [ch fr]
   (let [[skill-panel weap-panel] (skill-and-weapon-panel ch skills :skill)
         [pp _] (weapon-panel ch
                              penetrating-names
@@ -537,7 +584,7 @@
       (.add "Archetypes" (trait-panel ch archetypes :archetype nil))
       (.add "Impact" (scroll weap-panel))
       (.add "Penetrating" pp)
-      (.add "Custom" (custom-panel ch)))))
+      (.add "Custom" (custom-panel ch fr)))))
 
 
 ;;; Menu Operations
@@ -547,7 +594,7 @@
   (let [cp (.getContentPane fr)]
     (do (doto cp
           (.add (top-panel ch))
-          (.add (bottom-panel ch)))
+          (.add (bottom-panel ch fr)))
         (.pack fr))))
 
 (declare show-frame)

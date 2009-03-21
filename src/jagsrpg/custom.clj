@@ -27,7 +27,7 @@
       'res 'mem 'wil :break
       
       'base-damage 'hth-damage :break
-      'charm 'initmidate 'persuade 'recruit
+      'charm 'initmidate 'persuade 'recruit :break
  
       'damage-points :break
 
@@ -50,24 +50,29 @@
              (let [cell-pairs# ~(letfn [(step [cn]
                                               (let [mn (symcat cn "-mods")
                                                     scn (symcat n "-" cn)]
-                                                [`(cell :source ~scn 0)
+                                                [`(make-modifiable ~scn
+                                                                   [-99 99] 
+                                                                   0)
                                                  `(cell ~mn ~(var-from-name scn))]))]
                                         (vec (map step (remove keyword? custom-mods))))
-                   source-cells# (map first cell-pairs#)
+                   source-mods# (map first cell-pairs#)
                    mod-cells# (map second cell-pairs#)
                    name-cell# (cell :source ~(symcat n "-name") "-- custom trait --")
-                   all-cells# (conj (concat source-cells# mod-cells#) name-cell#)]
+                   all-cells# (conj mod-cells# name-cell#)]
                (struct-map trait
                  :name ~(make-display-name n)
                  :type :custom
-                 :modifiables nil
+                 :modifiables source-mods#
                  :cost nil ; Handled by the main cell matrix
                  :add (fn [ch#]
+                        (doseq [mod# source-mods#]
+                          (add-modifiable ch# mod#))
                         (add-cells ch# all-cells#))
                  :remove (fn [ch#]
-                           (remove-cells ch# all-cells#))
-                 :symb-name (quote ~n)
-                 :source-cells source-cells#)))))
+                           (remove-cells ch# all-cells#)
+                           (doseq [mod# source-mods#]
+                             (remove-modifiable ch# mod#)))
+                 :symb-name (quote ~n))))))
 
 (defmacro make-custom-traits
   []
@@ -84,7 +89,7 @@
       (find-first step custom-traits)))
 
 (defn get-source-list
-  "Returns the symbolic names of the source cells of tr"
+  "Returns a list of [display-name, cell-name] for the sources"
   [tr]
   (let [tr-n (:symb-name tr)
         step (fn [n]
@@ -96,11 +101,13 @@
 (comment
 
   (def fred ((:make (custom-trait molly))))
+  (:modifiables fred)
 
   (def ch (build-character))
   (print-dataflow (:model ch))
 
   (add-trait ch fred)
+  (add-cells (:model ch) [(cell perception-mods ?molly-perception)])
   (get-source-list fred)
 
   (macroexpand '(custom-trait molly))
