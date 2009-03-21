@@ -188,7 +188,7 @@
 
 (defn- hth-skill-rows
   [ch sk]
-  (let [sn (:bare-name sk)
+  (let [sn (:symb-name sk)
         pn (punch-name sn)
         cn (cross-name sn)
         kn (kick-name sn)
@@ -202,7 +202,7 @@
 
 (defn- weapon-row
   [ch wpn]
-  (let [name (get-value (:model ch) (symcat (:main-name wpn) "-name"))
+  (let [name (get-value (:model ch) (symcat (:symb-name wpn) "-name"))
         symbs (:symbols wpn)
         html (damage-row ch name symbs)]
     html))

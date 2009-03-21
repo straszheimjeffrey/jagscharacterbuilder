@@ -61,18 +61,12 @@
                    all-cells# (conj mod-cells# name-cell#)]
                (struct-map trait
                  :name ~(make-display-name n)
+                 :symb-name (quote ~n)
                  :type :custom
                  :modifiables source-mods#
                  :cost nil ; Handled by the main cell matrix
-                 :add (fn [ch#]
-                        (doseq [mod# source-mods#]
-                          (add-modifiable ch# mod#))
-                        (add-cells ch# all-cells#))
-                 :remove (fn [ch#]
-                           (remove-cells ch# all-cells#)
-                           (doseq [mod# source-mods#]
-                             (remove-modifiable ch# mod#)))
-                 :symb-name (quote ~n))))))
+                 :cells (concat (mapcat get-modifiable-cells source-mods#)
+                                all-cells#))))))
 
 (defmacro make-custom-traits
   []

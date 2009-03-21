@@ -142,20 +142,18 @@
                      cells# (conj ~chart wn#)]
                  (struct-map trait
                    :name ~(make-display-name n)
+                   :symb-name (quote ~n)
                    :type ~(keyword (str t "-weapon"))
                    :modifiables [mod#]
                    :cost nil
-                   :add (fn [ch#]
-                          (dosync (add-modifiable ch# mod#)
-                                  (add-cells ch# cells#)))
-                   :remove (fn [ch#]
-                             (dosync (remove-cells ch# cells#)
-                                     (remove-modifiable ch# mod#)))
+                   :cells (concat (get-modifiable-cells mod#)
+                                  cells#)
                    :name-cell wn#
-                   :main-name '~n
                    :symbols (quote ~(condp = t
-                                             'impact (get-impact-symbols n)
-                                             'penetrating (get-penetrating-symbols n)))))))))
+                                             'impact
+                                                (get-impact-symbols n)
+                                             'penetrating
+                                                (get-penetrating-symbols n)))))))))
 
 (defmacro make-weapons
   [t]
@@ -190,7 +188,6 @@
   (:add ww)
   (macroexpand '(make-weapon impact mary))
  
-  
   (use :reload 'jagsrpg.damage)
   (use 'clojure.contrib.stacktrace) (e)
   (use 'clojure.contrib.trace)

@@ -408,7 +408,7 @@
 (defn add-weapon-to-gui
   [ch dp w]
   (let [labels (for [sym (:symbols w)]
-                 (if (= sym (:main-name w))
+                 (if (= sym (:symb-name w))
                    (tied-spinner ch (-> w :modifiables first))
                    (tied-label ch sym)))
         n (tied-text-box ch (-> w :name-cell :name) 6)
@@ -489,7 +489,7 @@
 
 (defn add-hth-skill-to-gui
   [ch dp trait dam-dp]
-  (let [base-name (:bare-name trait)
+  (let [base-name (:symb-name trait)
         labels (fn [base]
                  (cons (-> base make-display-name label)
                        (map (partial tied-label ch) (get-impact-symbols base))))

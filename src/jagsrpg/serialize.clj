@@ -48,12 +48,12 @@
 (defn deserialize-character
   "Given a form built by serialize-character, make a character again"
   [ser]
-  (let [ch (build-character)]
-    (do (doseq [td (:traits ser)]
-          (let [col (type-to-trait-collection (second td))
-                factory (find-first #(= (first td) (:name %)) col)
-                tr ((:make factory))]
-            (add-trait ch tr)))
+  (let [ch (build-character)
+        traits (for [td (:traits ser)]
+                 (let [col (type-to-trait-collection (second td))
+                       factory (find-first #(= (first td) (:name %)) col)]
+                   ((:make factory))))]
+    (do (add-traits ch traits)
         (update-values (:model ch) (:source-cells ser))
         ch)))
     

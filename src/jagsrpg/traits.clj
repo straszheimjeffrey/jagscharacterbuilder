@@ -53,7 +53,7 @@
                 [(cell initiative-mods 2)])
       (st-trait one-eyed [-1 -2])
       (st-trait peg-legged [-1 -4])
-      (variable-trait "Toughness"
+      (variable-trait toughness
                       :trait
                       (make-modifiable toughness [1 9999] 1)
                       (cell cp-cost (let [t ?toughness]

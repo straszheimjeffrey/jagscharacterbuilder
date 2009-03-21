@@ -64,15 +64,11 @@
                        cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
                    (struct-map trait
                      :name ~display-name
+                     :symb-name (quote ~cell-name)
                      :type :secondary
                      :modifiables [modifiable#]
                      :cost cost-cell#
-                     :add (fn [char#]
-                            (add-modifiable char# modifiable#)
-                            (add-cells char# cells#))
-                     :remove (fn [char#]
-                               (remove-cells char# cells#)
-                               (remove-modifiable char# modifiable#))))))))
+                     :cells (concat cells# (get-modifiable-cells modifiable#))))))))
        
 (defmacro basic-secondary-trait
   "Create a basic secondary trait.  Add cells, is a function returning
@@ -88,20 +84,20 @@
 (def secondary-traits
      [(standard-secondary-trait powerful      str phy :increase)
       (standard-secondary-trait weaker        str phy :decrease)
-      (basic-secondary-trait "Puny" -5 str phy
+      (basic-secondary-trait puny -5 str phy
                              [(cell str-mods (- 8 ?phy))])
 
       (standard-secondary-trait big-tall      base-bld phy :increase)
       (standard-secondary-trait slight        base-bld phy :decrease)
-      (variable-trait "Light/Short"
+      (variable-trait light-short
                       :secondary
                       (make-modifiable light-short [1 3] 1)
                       (cell cp-cost 0)
                       [(cell displayed-bld-mods (* -1 ?light-short))])
-      (basic-secondary-trait "Emaciated" -5 bld phy
+      (basic-secondary-trait emaciated -5 bld phy
                              [(cell bld-mods (- 7 ?phy))
                               (cell damage-point-mods -4)])
-      (variable-trait "Fat/Obese"
+      (variable-trait fat-obese
                       :secondary
                       (make-modifiable fat-obese [1 2] 1)
                       (cell cp-cost ([-3 -5] (dec ?fat-obese)))
@@ -112,9 +108,9 @@
 
       (standard-secondary-trait resiliant     con phy :increase)
       (standard-secondary-trait sickly        con phy :decrease)
-      (basic-secondary-trait "Fragile" -7 con phy
+      (basic-secondary-trait fragile -7 con phy
                              [(cell con-mods (- 7 ?phy))])
-      (variable-trait "Ill"
+      (variable-trait ill
                       :secondary
                       (make-modifiable ill [1 3] 1)
                       (cell cp-cost ([-1 -3 -5] (dec ?ill)))
@@ -122,34 +118,34 @@
 
       (standard-secondary-trait coordinated   cor ref :increase)
       (standard-secondary-trait klutz         cor ref :decrease)
-      (basic-secondary-trait "Crippled Hands" -6 cor ref
+      (basic-secondary-trait crippled-hands -6 cor ref
                              [(cell cor-mods (- 7 ?ref))])
 
       (standard-secondary-trait quick         rea ref :increase)
       (standard-secondary-trait slow          rea ref :decrease)
-      (basic-secondary-trait "Sluggish" -7 rea ref
+      (basic-secondary-trait sluggish -7 rea ref
                              [(cell rea-mods (- 7 ?ref))])
 
       (standard-secondary-trait agile         agi ref :increase)
       (standard-secondary-trait clumsy        agi ref :decrease)
-      (basic-secondary-trait "Uncoordinated" -8 agi ref
+      (basic-secondary-trait uncoordinated -8 agi ref
                              [(cell agi-mods (- 7 ?ref))])
 
       (standard-secondary-trait smart         res int :increase)
       (standard-secondary-trait dull-simple   res int :decrease)
-      (basic-secondary-trait "Clueless" -4 res int nil)
-      (basic-secondary-trait "Retarded" -5 res int
+      (basic-secondary-trait clueless -4 res int nil)
+      (basic-secondary-trait retarded -5 res int
                              [(cell res-mods (- 7 ?int))])
 
       (standard-secondary-trait photographic-memory mem int :increase)
       (standard-secondary-trait forgetfull    res int  :decrease)
-      (basic-secondary-trait "Empty Headed" -7 mem int
+      (basic-secondary-trait empty-headed -7 mem int
                              [(cell mem-mods (- 7 ?int))])
 
       (standard-secondary-trait strong-willed wil int :increase)
       (standard-secondary-trait weak-willed   wil int :decrease)
-      (basic-secondary-trait "Wishy Washy" -4 wil int nil)
-      (basic-secondary-trait "Weak Minded" -5 wil int
+      (basic-secondary-trait wishy-washy -4 wil int nil)
+      (basic-secondary-trait weak-minded -5 wil int
                              [(cell wil-mods (- 7 ?int))])])
 
 (comment

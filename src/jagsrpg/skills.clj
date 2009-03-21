@@ -69,19 +69,14 @@
                      ac# (conj ~cells cost#)]
                  (struct-map trait
                    :name ~(make-display-name n)
+                   :symb-name (quote ~n)
                    :type :skill
                    :hth ~hth
-                   :bare-name (quote ~n)
                    :modifiables [roll# level#]
                    :cost cost#
-                   :add (fn [ch#]
-                          (do (add-modifiable ch# roll#)
-                              (add-modifiable ch# level#)
-                              (add-cells ch# ac#)))
-                   :remove (fn [ch#]
-                             (remove-cells ch# ac#)
-                             (remove-modifiable ch# roll#)
-                             (remove-modifiable ch# level#))))))))
+                   :cells (concat (get-modifiable-cells roll#)
+                                  (get-modifiable-cells level#)
+                                  ac#)))))))
 
 (defmacro skill
   ([n type stats] `(skill-abstract ~n ~type ~stats nil nil))

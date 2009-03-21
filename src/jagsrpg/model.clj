@@ -67,15 +67,10 @@
                                     (> ~var-name ~(second range)))
                             (throwf "%s is out of range %s" ~display-name ~range))))))
 
-(defn add-modifiable
-  "Adds the cell and a validator to a model"
-  [model modifiable]
-  (add-cells model [(:cell modifiable) (:validator modifiable)]))
-
-(defn remove-modifiable
-  "Removes the cell and validator from a model"
-  [model modifiable]
-  (remove-cells model [(:cell modifiable) (:validator modifiable)]))
+(defn get-modifiable-cells
+  "Get the cells from a modifiable"
+  [modifiable]
+  [(:cell modifiable) (:validator modifiable)])
 
 
 ;;; Primary Model
@@ -273,8 +268,9 @@
         traits (ref #{})]
     (struct-map jags-character
       :primary-stats primaries
-      :model (build-dataflow (concat (map :cell primaries)
-                                     (map :validator primaries) model))
+      :model (build-dataflow (concat (mapcat get-modifiable-cells
+                                             primaries)
+                                     model))
       :traits traits)))
 
 
@@ -288,64 +284,56 @@
 ;; A trait
 (defstruct trait
   :name          ; The name, a String -- must match its factory name
+  :symb-name     ; The name as a symbol
   :type          ; Such as :secondary, :trait, :archetype, or :skill
   :modifiables   ; A collection of modifiables
-  :cost          ; The cost cell
-  :add           ; A function of one argument, to add this to a character model
-  :remove)       ; The same, but removes this
+  :cost          ; The cost cell, can be nil
+  :cells)        ; All cells of this trait
 
-(defn add-trait
+(defn add-traits
   "Add trait to character"
-  [ch tr]
-  (dosync (alter (:traits ch) conj tr)
-          ((:add tr) (:model ch))))
+  [ch trs]
+  (dosync (alter (:traits ch) (fn [s] (apply conj s trs)))
+          (add-cells (:model ch) (mapcat :cells trs))))
 
-(defn remove-trait
+(defn remove-traits
   "Remove a trait from a character"
-  [ch tr]
-  (dosync (alter (:traits ch) disj tr)
-          ((:remove tr) (:model ch))))
+  [ch trs]
+  (dosync (alter (:traits ch) (fn [s] (apply disj s trs)))
+          (remove-cells (:model ch) (mapcat :cells trs))))
 
 (defmacro basic-trait
   "Create a basic trait factory.  cost is a cell, usually defining a
    cp-cost or ap-cost.  Cells is a collection for arbitrary cells."
   [trait-name type cost cells]
   `(struct-map trait-factory
-     :name ~trait-name
+     :name ~(make-display-name trait-name)
      :make (fn []
              (let [cost# ~cost
                    cells# (conj ~cells cost#)]
                (struct-map trait
-                 :name ~trait-name
+                 :name ~(make-display-name trait-name)
+                 :symb-name (quote ~trait-name)
                  :type ~type
                  :modifiables [(make-modifiable mod# [1 1] 1)]
                  :cost cost#
-                 :add (fn [ch#]
-                        (add-cells ch# cells#))
-                 :remove (fn [ch#]
-                           (remove-cells ch# cells#)))))))
+                 :cells cells#)))))
 
 (defmacro variable-trait
   "A trait that can vary according to a source."
   [trait-name type modifiable cost cells]
   `(struct-map trait-factory
-     :name ~trait-name
+     :name ~(make-display-name trait-name)
      :make (fn []
              (let [mod# ~modifiable
-                   cost# ~cost
-                   cells# (conj ~cells cost#)]
+                   cost# ~cost]
                (struct-map trait
-                 :name ~trait-name
+                 :name ~(make-display-name trait-name)
+                 :symb-name (quote ~trait-name)
                  :type ~type
                  :modifiables [mod#]
                  :cost cost#
-                 :add (fn [ch#]
-                        (add-modifiable ch# mod#)
-                        (add-cells ch# cells#))
-                 :remove (fn [ch#]
-                           (remove-cells ch# cells#)
-                           (remove-modifiable ch# mod#)))))))
-
+                 :cells (concat ~cells (get-modifiable-cells mod#) [cost#]))))))
 
 ;;; Trait
 
@@ -355,7 +343,7 @@
      `(trait-base ~type ~trait-name ~cost-vec nil))
   ([type trait-name cost-vec cells]
      (let [cost-name (symcat trait-name "-cost")]
-       `(variable-trait ~(make-display-name trait-name)
+       `(variable-trait ~trait-name
                         ~type
                         (make-modifiable ~trait-name [1 ~(count cost-vec)] 1)
                         (cell ~(condp = type
