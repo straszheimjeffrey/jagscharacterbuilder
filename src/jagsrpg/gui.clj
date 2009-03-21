@@ -605,7 +605,7 @@
                           (.matches (.getName f) ".*\\.jags$"))
                   (getDescription [] "JAGS Characters")))
 
-(def html-file-filer (proxy [FileFilter] []
+(def html-file-filter (proxy [FileFilter] []
                        (accept [f]
                                (.matches (.getName f) ".*\\.html$"))
                        (getDescription [] "HTML Document")))
