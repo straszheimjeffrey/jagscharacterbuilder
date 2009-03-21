@@ -85,7 +85,7 @@
 
   <target name="make-zip" description="Zip the build folder"
           depends="build">
-    <zip destfile="jagsbuilder.zip" basedir="jagsbuilder"/>
+    <zip destfile="jagsbuilder.zip" basedir="jagsbuilder" level="9"/>
   </target>
 
 </project>

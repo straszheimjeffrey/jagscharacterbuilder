@@ -625,8 +625,10 @@
               
 (defn save-character
   [fr ch]
-  (let [chooser (JFileChooser.)]
+  (let [chooser (JFileChooser.)
+        cm (-> ch :model (get-cell 'name) :value deref)]
     (.setFileFilter chooser file-filter)
+    (.setSelectedFile chooser (File. (str cm ".jags")))
     (let [result (.showSaveDialog chooser fr)
           fix-name (fn [n]
                      (if (.accept file-filter n)

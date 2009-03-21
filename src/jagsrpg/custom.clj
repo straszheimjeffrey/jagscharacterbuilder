@@ -26,7 +26,7 @@
       'cor 'rea 'agi :break
       'res 'mem 'wil :break
       
-      'base-damage 'hth-damage :break
+      'base-damage 'hand-to-hand-damage :break
       'charm 'initmidate 'persuade 'recruit :break
  
       'damage-points :break
@@ -76,7 +76,7 @@
 
 (defmacro make-custom-traits
   []
-  (vec (for [n (range 64)]
+  (vec (for [n (range 12)]
          `(custom-trait ~(symcat "custom-trait-" n)))))
 
 (def custom-traits (make-custom-traits))

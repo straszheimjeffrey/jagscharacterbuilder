@@ -160,7 +160,7 @@
 (defmacro make-weapons
   [t]
   (vec
-   (for [n (range 64)]
+   (for [n (range 20)]
      (let [n (symcat "wpn-" t "-" n)]
        `(make-weapon ~t ~n)))))
   
