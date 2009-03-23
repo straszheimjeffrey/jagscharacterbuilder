@@ -25,6 +25,7 @@
   (:use jagsrpg.html)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)])
+  (:use [clojure.contrib.math :only (floor ceil)])
   (:use [clojure.contrib.duck-streams :only (writer)]))
 
 (import '(java.io File
@@ -100,6 +101,19 @@
 
 ;;; Components tied to model objects
 
+(defn- label-text
+  [txt]
+  (if (and (rational? txt)
+           (not= txt 0))
+    (let [ip (if (>= txt 0)
+               (floor txt)
+               (ceil txt))
+          fp (if (>= txt 0)
+               (- txt ip)
+               (* -1 (- txt ip)))]
+      (str (if (not= ip 0) ip "") " " (if (not= fp 0) fp "")))
+    (str txt)))
+
 (defn tied-label
   "Build a swing label that tracks a stat"
   ([ch stat] (tied-label (get-cell (:model ch) stat)))
@@ -113,7 +127,7 @@
           (fn [key cell old-v new-v]
             (SwingUtilities/invokeLater
              (fn []
-               (let [n-s (str new-v)]
+               (let [n-s (label-text new-v)]
                  (when (not= n-s (.getText label))
                    (.setText label n-s)))))))
          label))))
