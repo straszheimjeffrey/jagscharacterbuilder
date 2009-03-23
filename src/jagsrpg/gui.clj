@@ -144,19 +144,18 @@
         spinner (JSpinner. model)]
     (when (= min max)
       (.setEnabled spinner false))
-    (.addChangeListener
-              spinner
-              (proxy [ChangeListener] []
-                (stateChanged [evt]
-                              (let [cur-m (-> modifiable :cell get-value-from-cell)
-                                    cur-gui (.getValue spinner)]
-                                (when (not= cur-m cur-gui)
-                                  (try
-                                   (update-values (:model ch)
-                                                  {(-> modifiable :cell :name)
-                                                   cur-gui})
-                                   (catch Exception e
-                                     (.setValue spinner cur-m))))))))
+    (.addChangeListener spinner
+          (proxy [ChangeListener] []
+            (stateChanged [evt]
+                          (let [cur-m (-> modifiable :cell get-value-from-cell)
+                                cur-gui (.getValue spinner)]
+                            (when (not= cur-m cur-gui)
+                              (try
+                               (update-values (:model ch)
+                                              {(-> modifiable :cell :name)
+                                               cur-gui})
+                               (catch Exception e
+                                 (.setValue spinner cur-m))))))))
     spinner))
 
 (defn tied-text-box
