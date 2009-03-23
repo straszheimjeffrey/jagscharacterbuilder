@@ -49,8 +49,10 @@
                                        expensive-skill-linked-cost
                                        level-cost-expensive]
                   :default (throwf Exception "Bad skill type %s" type))]
-    (+ (l level) (apply min (t roll) (map (partial lookup-linked-cost lt roll)
-                                          stats)))))
+    (max 1/2
+         (+ (l level)
+            (apply min (t roll) (map (partial lookup-linked-cost lt roll)
+                                     stats))))))
 
 (defmacro skill-abstract
   [n type stats cells hth]
