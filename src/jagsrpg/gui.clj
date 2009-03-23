@@ -54,7 +54,9 @@
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
                          WindowListener
-                         WindowAdapter)
+                         WindowAdapter
+                         MouseAdapter
+                         MouseEvent)
         '(javax.swing.event ChangeListener
                             DocumentListener)
         '(java.awt FlowLayout)
@@ -531,29 +533,37 @@
         list (JList. lm)
         button (JButton. "Add")
         layout (MigLayout. "wrap 1")
-        panel (JPanel. layout)]
+        panel (JPanel. layout)
+        add-selection (fn []
+                        (let [n (.getSelectedValue list)
+                              f (find-first #(= n (:name %)) factories)]
+                          (when f
+                            (let [tr ((:make f))]
+                              (do
+                                (add-traits ch [tr])
+                                (if (:hth tr)
+                                  (add-hth-skill-to-gui ch dp tr extra)
+                                  (add-trait-to-gui ch dp tr))
+                                (.revalidate panel))))))]
     (do
       (doseq [f factories]
         (.addElement lm (:name f)))
       (doto list
-        (.setSelectionMode (ListSelectionModel/SINGLE_SELECTION)))
+        (.setSelectionMode (ListSelectionModel/SINGLE_SELECTION))
+        (.addMouseListener
+         (proxy [MouseAdapter] []
+           (mouseClicked [evt]
+                         (when (and (>= (.getClickCount evt) 2)
+                                    (= (.getButton evt) MouseEvent/BUTTON1))
+                           (add-selection))))))
       (doto button
         (.addActionListener
          (proxy [ActionListener] []
            (actionPerformed [evt]
-                  (let [n (.getSelectedValue list)
-                        f (find-first #(= n (:name %)) factories)]
-                    (when f
-                      (let [tr ((:make f))]
-                        (do
-                          (add-traits ch [tr])
-                          (if (:hth tr)
-                            (add-hth-skill-to-gui ch dp tr extra)
-                            (add-trait-to-gui ch dp tr))
-                          (.revalidate panel)))))))))
-        (doto panel
-          (.add (scroll list))
-          (.add button)))))
+                            (add-selection)))))
+      (doto panel
+        (.add (scroll list))
+        (.add button)))))
   
 (defn trait-display-panel
   [ch]
