@@ -78,6 +78,9 @@
   [txt]
   (html (th txt)))
 
+(defn- th-wpn
+  [txt]
+  (html (th {:class "damage-header"} txt)))
 
 ;;; The panels
 
@@ -161,20 +164,20 @@
 
 (defn- traits-panel
   [ch]
-  (let [trs (filter #(or (= :secondary (:type %))
-                         (= :trait (:type %))) @(:traits ch))
+  (let [trs (sort-by :name (filter #(or (= :secondary (:type %))
+                                        (= :trait (:type %))) @(:traits ch)))
         tr-html (apply str (map trait-row trs))]
     (html (table {:id "traits"} tr-html))))
 
 (defn- a-traits-panel
   [ch]
-  (let [trs (filter #(= :archetype (:type %)) @(:traits ch))
+  (let [trs (sort-by :name (filter #(= :archetype (:type %)) @(:traits ch)))
         tr-html (apply str (map trait-row trs))]
     (html (table {:id "a-traits"} tr-html))))
 
 (defn- skills-panel
   [ch]
-  (let [sks (filter #(= :skill (:type %)) @(:traits ch))
+  (let [sks (sort-by :name (filter #(= :skill (:type %)) @(:traits ch)))
         tr-html (apply str (map skill-row sks))]
     (html (table {:id "skills"} tr-html))))
 
@@ -209,12 +212,12 @@
 
 (defn- impact-damage-panel
   [ch]
-  (let [hths (filter #(= :hth (:hth %)) @(:traits ch))
-        i-wpns (filter #(= :impact-weapon (:type %)) @(:traits ch))
+  (let [hths (sort-by :name (filter #(= :hth (:hth %)) @(:traits ch)))
+        i-wpns (sort-by :name (filter #(= :impact-weapon (:type %)) @(:traits ch)))
         s-rs (apply str (map (partial hth-skill-rows ch) hths))
         w-rs (apply str (map (partial weapon-row ch) i-wpns))
         header-ns (cons "Name" impact-names)
-        header (apply str (map th header-ns))]
+        header (apply str (map th-wpn header-ns))]
     (html (table {:id "impact-damage"}
                  (tr header)
                  s-rs
@@ -222,10 +225,10 @@
         
 (defn- penetrating-damage-panel
   [ch]
-  (let [i-wpns (filter #(= :penetrating-weapon (:type %)) @(:traits ch))
+  (let [i-wpns (sort-by :name (filter #(= :penetrating-weapon (:type %)) @(:traits ch)))
         w-rs (apply str (map (partial weapon-row ch) i-wpns))
         header-ns (cons "Name" penetrating-names)
-        header (apply str (map th header-ns))]
+        header (apply str (map th-wpn header-ns))]
     (html (table {:id "penetrating-damage"}
                  (tr header)
                  w-rs))))
@@ -242,7 +245,7 @@
 
 (defn- custom-panel
   [ch]
-  (let [ctrs (filter #(= :custom (:type %)) @(:traits ch))
+  (let [ctrs (sort-by :name (filter #(= :custom (:type %)) @(:traits ch)))
         rws (apply str (map (partial custom-row ch) ctrs))]
     (html (table {:id "custom-traits"} rws))))
 
@@ -257,9 +260,14 @@
     (apply str (map each pairs))))
         
 (def style
-     (let [styles (styles "td, th" {:vertical-align "top"
+     (let [styles (styles "body" {:font-family "Verdana, Geneva, sans-serif"
+                                  :font-size "small"}
+                          "td, th" {:vertical-align "top"
                                     :padding "2px 4px"}
-                          "td" {:text-align "center"})]
+                          "td" {:text-align "center"}
+                          "th" {:text-align "left"}
+                          "th.damage-header" {:text-align "center"
+                                              :min-width "0.125in"})]
        (html (style {:type "text/css"}
                     "<!--\n"
                     styles
@@ -306,21 +314,6 @@
                                  p-dam))))))))
 
 (comment
-
-  (let [joe "joe"]
-    (html (html {:fred "mary" "sam" "mary"} joe)))
-
-  (macroexpand '(stat phy))
-
-  (def character1 (build-character))
-  ;(def character jagsrpg.gui/character)
-  (print-dataflow (:model character1))
-  (:traits character1)
-
-  (html-page character1)
-
-  (add-trait character1 ((:make (first secondary-traits))))
-
   (use :reload 'jagsrpg.html)
   (use 'clojure.contrib.stacktrace) (e)
 )

@@ -412,7 +412,7 @@
                                     (let [nct ((:make (get-custom-trait @(:traits ch))))]
                                       (add-traits ch [nct])
                                       (add-custom-to-gui ch fr dp nct)))))
-        (doseq [ct cts]
+        (doseq [ct (sort-by :name cts)]
           (add-custom-to-gui ch fr dp ct))
         panel)))
 
@@ -468,7 +468,7 @@
                          (let [nw ((:make (get-weapon weapons @(:traits ch))))]
                            (add-traits ch [nw])
                            (add-weapon-to-gui ch dp nw)))))
-        (doseq [w ws]
+        (doseq [w (sort-by :name ws)]
           (add-weapon-to-gui ch dp w))
         [panel dp])))
 
@@ -579,7 +579,7 @@
     (do (doto panel
           (.add (scroll dp) "grow")
           (.add (trait-selection-list ch factories dp extra)))
-        (doseq [t traits]
+        (doseq [t (sort-by :name traits)]
           (if (:hth t)
             (add-hth-skill-to-gui ch dp t extra)
             (add-trait-to-gui ch dp t)))
