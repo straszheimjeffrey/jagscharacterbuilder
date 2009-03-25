@@ -38,6 +38,7 @@
                       JLabel
                       JList
                       JTextField
+                      JTextArea
                       DefaultListModel
                       ListSelectionModel
                       JButton
@@ -158,12 +159,12 @@
                                  (.setValue spinner cur-m))))))))
     spinner))
 
-(defn tied-text-box
+(defn tied-text-component
   "Build a text box that updates a cell"
-  [ch stat width]
+  [ch stat fun]
   (let [cell (get-cell (:model ch) stat)
         init (get-value-from-cell cell)
-        text-box (JTextField. init width)
+        text-box (fun init)
         document (.getDocument text-box)
         content-changed (fn []
                           (let [cur-m (get-value-from-cell cell)
@@ -183,6 +184,17 @@
                               (removeUpdate [evt] (content-changed))
                               (insertUpdate [evt] (content-changed))))
       text-box)))
+
+(defn tied-text-box
+  "Build a text box that updates a cell"
+  [ch stat width]
+  (tied-text-component ch stat (fn [init] (JTextField. init width))))
+
+(defn tied-text-area
+  "Build a text area that updates a cell"
+  [ch stat width height]
+  (scroll (tied-text-component ch stat (fn [init]
+                                         (JTextArea. init width height)))))
 
 ;;; Top panels
 
@@ -318,7 +330,9 @@
 
 ;;; Bottom Panels
 
-;; Custom Trait Dialog
+;; Dialogs
+
+(declare notes-button)
 
 (defn custom-dialog
   [ch fr ct]
@@ -328,6 +342,7 @@
         panel (JPanel. layout)
         n (:symb-name ct)
         nm (tied-text-box ch (symcat n "-name") 30)
+        nb (notes-button ch fr n)
         sl (get-source-list ct)
         step (fn [mod]
                [(-> mod :cell :name) mod])
@@ -335,7 +350,9 @@
         cb (JButton. "Close")]
     (do (.setLayout panel layout)
         (.add panel (label "Optional Trait") "sx 5, wrap")
-        (.add panel nm "sx 5, wrap")
+        (.add panel (label "Name") "right")
+        (.add panel nm "sx 4")
+        (.add panel nb "wrap")
         (loop [f (first sl)
                n (next sl)
                m (fnext sl)]
@@ -353,6 +370,38 @@
                            (.setVisible dia false))))
         (.add cp (scroll panel))
         dia)))
+
+(defn notes-dialog
+  [ch fr name]
+  (let [dia (JDialog. fr)
+        cp (.getContentPane dia)
+        layout (MigLayout.)
+        panel (JPanel. layout)
+        text-box (tied-text-area ch (symcat name "-notes") 8 40)
+        cb (JButton. "Close")]
+    (do (.setLayout panel layout)
+        (.add panel text-box "wrap")
+        (.add panel cb)
+        (.addActionListener cb
+                            (proxy [ActionListener] []
+                              (actionPerformed [evt]
+                                               (.setVisible dia false))))
+        (.add cp panel)
+        dia)))
+
+
+;; Notes Button
+
+(defn notes-button
+  [ch fr name]
+  (let [button (JButton. "Notes")
+        dia (notes-dialog ch fr name)]
+    (.addActionListener button
+                        (proxy [ActionListener] []
+                          (actionPerformed [evt]
+                                           (.pack dia)
+                                           (.setVisible dia true))))
+    button))
 
 
 ;; Custom Traits
@@ -746,7 +795,7 @@
     (do (doto cp
           (.removeAll)
           (.add (top-panel ch))
-          (.add (bottom-panel ch fr)))
+          (.add (bottom-panel ch fr) "growprio 200"))
         (.pack fr)
         (checkpoint-character fr ch))))
 
