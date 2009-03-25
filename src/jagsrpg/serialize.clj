@@ -20,6 +20,7 @@
   (:use jagsrpg.skills)
   (:use jagsrpg.archetype)
   (:use jagsrpg.damage)
+  (:use jagsrpg.weapons)
   (:use jagsrpg.custom)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)]))
@@ -64,8 +65,6 @@
   (def ser (serialize-character fred))
   (deserialize-character ser)
   
-
-
   (use :reload 'jagsrpg.serialize)
   (use 'clojure.contrib.stacktrace) (e)
 )

@@ -21,6 +21,7 @@
   (:use jagsrpg.traits)
   (:use jagsrpg.archetype)
   (:use jagsrpg.custom)
+  (:use jagsrpg.weapons)
   (:use jagsrpg.serialize)
   (:use jagsrpg.html)
   (:use clojure.contrib.dataflow)
