@@ -56,18 +56,20 @@
                                         (secondary-cost ~(var-from-name cell-name)
                                                         ~(var-from-name primary)
                                                         ~multiplier))
+                       notes# (cell :source ~(symcat cell-name "-notes") ""xs)
                        mod-cell# (cell ~modifier-name (* ~(var-from-name cell-name)
                                                          ~multiplier))
                        [val1-cell# val2-cell#] (secondary-validators
                                                 ~primary
                                                 ~cell-name)
-                       cells# [cost-cell# mod-cell# val1-cell# val2-cell#]]
+                       cells# [cost-cell# mod-cell# val1-cell# val2-cell# notes#]]
                    (struct-map trait
                      :name ~display-name
                      :symb-name (quote ~cell-name)
                      :type :secondary
                      :modifiables [modifiable#]
                      :cost cost-cell#
+                     :notes notes#
                      :cells (concat cells# (get-modifiable-cells modifiable#))))))))
        
 (defmacro basic-secondary-trait
@@ -149,8 +151,6 @@
                              [(cell wil-mods (- 7 ?int))])])
 
 (comment
-
-
 (use :reload 'jagsrpg.secondary)
 (use :reload 'jagsrpg.model)
 (use 'clojure.contrib.stacktrace) (e)

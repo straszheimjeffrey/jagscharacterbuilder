@@ -288,6 +288,7 @@
   :type          ; Such as :secondary, :trait, :archetype, or :skill
   :modifiables   ; A collection of modifiables
   :cost          ; The cost cell, can be nil
+  :notes         ; The notes cell, holds a string
   :cells)        ; All cells of this trait
 
 (defn add-traits
@@ -310,13 +311,15 @@
      :name ~(make-display-name trait-name)
      :make (fn []
              (let [cost# ~cost
-                   cells# (conj ~cells cost#)]
+                   notes# (cell :source ~(symcat trait-name "-notes") "")
+                   cells# (conj ~cells cost# notes#)]
                (struct-map trait
                  :name ~(make-display-name trait-name)
                  :symb-name (quote ~trait-name)
                  :type ~type
                  :modifiables [(make-modifiable mod# [1 1] 1)]
                  :cost cost#
+                 :notes notes#
                  :cells cells#)))))
 
 (defmacro variable-trait
@@ -326,14 +329,16 @@
      :name ~(make-display-name trait-name)
      :make (fn []
              (let [mod# ~modifiable
-                   cost# ~cost]
+                   cost# ~cost
+                   notes# (cell :source ~(symcat trait-name "-notes") "")]
                (struct-map trait
                  :name ~(make-display-name trait-name)
                  :symb-name (quote ~trait-name)
                  :type ~type
                  :modifiables [mod#]
                  :cost cost#
-                 :cells (concat ~cells (get-modifiable-cells mod#) [cost#]))))))
+                 :notes notes#
+                 :cells (concat ~cells (get-modifiable-cells mod#) [cost# notes#]))))))
 
 ;;; Trait
 

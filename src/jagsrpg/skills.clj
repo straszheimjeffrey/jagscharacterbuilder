@@ -68,7 +68,8 @@
                                                        ~type
                                                        [~@(map #(var-from-name %)
                                                                stats)]))
-                     ac# (conj ~cells cost#)]
+                     notes# (cell :source ~(symcat n "-notes") "")
+                     ac# (conj ~cells cost# notes#)]
                  (struct-map trait
                    :name ~(make-display-name n)
                    :symb-name (quote ~n)
@@ -76,6 +77,7 @@
                    :hth ~hth
                    :modifiables [roll# level#]
                    :cost cost#
+                   :notes notes#
                    :cells (concat (get-modifiable-cells roll#)
                                   (get-modifiable-cells level#)
                                   ac#)))))))

@@ -58,13 +58,15 @@
                    source-mods# (map first cell-pairs#)
                    mod-cells# (map second cell-pairs#)
                    name-cell# (cell :source ~(symcat n "-name") "-- custom trait --")
-                   all-cells# (conj mod-cells# name-cell#)]
+                   notes# (cell :source ~(symcat n "-notes") "")
+                   all-cells# (conj mod-cells# name-cell# notes#)]
                (struct-map trait
                  :name ~(make-display-name n)
                  :symb-name (quote ~n)
                  :type :custom
                  :modifiables source-mods#
                  :cost nil ; Handled by the main cell matrix
+                 :notes notes#
                  :cells (concat (mapcat get-modifiable-cells source-mods#)
                                 all-cells#))))))
 

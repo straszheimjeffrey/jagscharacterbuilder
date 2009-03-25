@@ -139,13 +139,15 @@
        :make (fn []
                (let [mod# (make-modifiable ~n [-999 999] 0)
                      wn# (cell :source ~(symcat n "-name") "")
-                     cells# (conj ~chart wn#)]
+                     notes# (cell :source ~(symcat n "-notes") "")
+                     cells# (conj ~chart wn# notes#)]
                  (struct-map trait
                    :name ~(make-display-name n)
                    :symb-name (quote ~n)
                    :type ~(keyword (str t "-weapon"))
                    :modifiables [mod#]
                    :cost nil
+                   :notes notes#
                    :cells (concat (get-modifiable-cells mod#)
                                   cells#)
                    :name-cell wn#
