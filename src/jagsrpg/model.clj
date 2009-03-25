@@ -15,6 +15,7 @@
 
 (ns jagsrpg.model
   (:use jagsrpg.utilities)
+  (:use jagsrpg.damage)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
   (:use [clojure.contrib.seq-utils :only (find-first)])
@@ -135,7 +136,13 @@
         match (fn [m]
                 (= name (-> m :cell :name)))]
     (find-first match stats)))
-  
+
+(defmacro basic-damage-charts
+  []
+  (vec (concat (impact-chart 'basic-punch)
+               (impact-chart 'basic-cross)
+               (impact-chart 'basic-kick))))
+
 (defn build-character
   "Returns a jags-character"
   []
@@ -181,6 +188,12 @@
                      (apply + (- ?str 10) (quot (- ?bld 10) 5) ?*base-damage-mods))
                (cell hand-to-hand-damage
                      (apply + ?base-damage ?*hand-to-hand-damage-mods))
+
+               (cell basic-punch (apply + ?hand-to-hand-damage ?*basic-punch-mods))
+               (cell basic-cross (apply + (j-add* ?hand-to-hand-damage 1)
+                                          ?*basic-cross-mods))
+               (cell basic-kick (apply + (j-add* ?hand-to-hand-damage 2)
+                                         ?*basic-kick-mods))
 
                (cell charm (apply + 10 ?*charm-mods))
                (cell intimidate (apply + 10 ?*intimidate-mods))
@@ -242,11 +255,13 @@
                (max-secondary-mods phy)
                (max-secondary-mods ref)
                (max-secondary-mods int)]
+        damage (basic-damage-charts)
         traits (ref #{})]
     (struct-map jags-character
       :primary-stats primaries
       :model (build-dataflow (concat (mapcat get-modifiable-cells
                                              primaries)
+                                     damage
                                      model))
       :traits traits)))
 

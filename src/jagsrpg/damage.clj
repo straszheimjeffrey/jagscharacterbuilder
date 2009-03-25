@@ -20,15 +20,20 @@
   (:use [clojure.contrib.seq-utils :only (find-first)])
   (:use [clojure.contrib.except :only (throwf)]))
 
-(defn j-add
-  "Add +/- y to x, or +/- y * 10%, whichever is greater.  Will never
-   return less than zero."
+
+(defn j-add*
+  "Adds y to x, or y * 10%, whichever is greater"
   [x y]
-  (max 0
        (cond
         (> y 0) (max (+ x y) (round (+ x (* x (/ y 10)))))
         (< y 0) (min (+ x y) (round (+ x (* x (/ y 10)))))
-        :otherwise x)))
+        :otherwise x))
+
+(defn j-add
+  "Add y to x, or y * 10%, whichever is greater.  Will never return
+   less than zero."
+  [x y]
+  (max 0 (j-add* x y)))
 
 (defn j-mult
   "Multiple x and y and round results.  Will never return negative"
