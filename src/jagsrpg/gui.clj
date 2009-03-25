@@ -530,10 +530,12 @@
      (let [nl (label (:name trait))
            sps (map (partial tied-spinner ch) (:modifiables trait))
            c (tied-label (:cost trait))
+           m (notes-button ch (find-frame dp) (:symb-name trait))
            d (JButton. "Delete")]
        (.add dp nl)
        (doseq [s sps] (.add dp s))
        (.add dp c)
+       (.add dp m)
        (.add dp d "wrap")
        (extra-adds)
        (.addActionListener d
@@ -543,6 +545,7 @@
                                               (.remove dp nl)
                                               (doseq [s sps] (.remove dp s))
                                               (.remove dp c)
+                                              (.remove dp m)
                                               (.remove dp d)
                                               (extra-removes)
                                               (validate-to-top dp))))
