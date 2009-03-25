@@ -25,8 +25,6 @@
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.walk :only (postwalk)])
   (:use [clojure.contrib.str-utils :only (str-join)]))
-;  (:use [clojure.contrib.seq-utils :only (find-first)])
-;  (:use [clojure.contrib.duck-streams :only (writer)]))
 
 
 ;;; Some useful macros
@@ -151,35 +149,34 @@
   [tr]
   (let [n (:name tr)
         val (-> tr :modifiables first :cell get-value-from-cell)
-        cost (-> tr :cost get-value-from-cell)]
-    (html (tr (th n) (td val) (td cost)))))
+        cost (-> tr :cost get-value-from-cell)
+        notes (-> tr :notes get-value-from-cell)]
+    (html (tr (th n) (td val) (td cost) (td notes)))))
 
 (defn- skill-row
   [sk]
   (let [n (:name sk)
         roll (-> sk :modifiables first :cell get-value-from-cell)
         level (-> sk :modifiables second :cell get-value-from-cell)
-        cost (-> sk :cost get-value-from-cell)]
-    (html (tr (th n) (td roll) (td level) (td cost)))))
+        cost (-> sk :cost get-value-from-cell)
+        notes (-> sk :notes get-value-from-cell)]
+    (html (tr (th n) (td roll) (td level) (td cost) (td notes)))))
 
-(defn- traits-panel
+(defn- traits-rows
   [ch]
   (let [trs (sort-by :name (filter #(or (= :secondary (:type %))
-                                        (= :trait (:type %))) @(:traits ch)))
-        tr-html (apply str (map trait-row trs))]
-    (html (table {:id "traits"} tr-html))))
+                                        (= :trait (:type %))) @(:traits ch)))]
+        (apply str (map trait-row trs))))
 
-(defn- a-traits-panel
+(defn- a-traits-rows
   [ch]
-  (let [trs (sort-by :name (filter #(= :archetype (:type %)) @(:traits ch)))
-        tr-html (apply str (map trait-row trs))]
-    (html (table {:id "a-traits"} tr-html))))
+  (let [trs (sort-by :name (filter #(= :archetype (:type %)) @(:traits ch)))]
+    (apply str (map trait-row trs))))
 
-(defn- skills-panel
+(defn- skills-rows
   [ch]
-  (let [sks (sort-by :name (filter #(= :skill (:type %)) @(:traits ch)))
-        tr-html (apply str (map skill-row sks))]
-    (html (table {:id "skills"} tr-html))))
+  (let [sks (sort-by :name (filter #(= :skill (:type %)) @(:traits ch)))]
+    (apply str (map skill-row sks))))
 
 (defn- damage-row
   [ch name symbs]
@@ -233,6 +230,25 @@
                  (tr header)
                  w-rs))))
 
+(defn- weapon-notes-row
+  [ch wpn]
+  (let [name (get-value (:model ch) (symcat (:symb-name wpn) "-name"))
+        notes (-> wpn :notes get-value-from-cell)]
+    (if (and notes (> (.length notes) 0))
+      (html (tr (td name) (td notes)))
+      "")))
+
+(defn- weapons-notes-table
+  [ch]
+  (let [wpns (sort-by :name (filter #(or (= :impact-weapon (:type %))
+                                         (= :penetrating-weapon (:type %)))
+                                    @(:traits ch)))
+        rows (apply str (map (partial weapon-notes-row ch) wpns))]
+    (if (> (.length rows) 0)
+      (html (table (tr (th "Name") (th "Notes"))
+                   rows))
+      rows)))
+
 (defn- custom-row
   [ch tr]
   (let [sn (:symb-name tr)
@@ -240,14 +256,14 @@
         ccn (symcat sn "-cp-cost")
         acn (symcat sn "-ap-cost")
         cc (get-value (:model ch) ccn)
-        ac (get-value (:model ch) acn)]
-    (html (tr (th n) (td "AP Cost") (td ac) (td "CP Cost") (td cc)))))
+        ac (get-value (:model ch) acn)
+        notes (-> tr :notes get-value-from-cell)]
+    (html (tr (th n) (td "&nbsp;") (td ac "/" cc) (td notes)))))
 
-(defn- custom-panel
+(defn- custom-rows
   [ch]
-  (let [ctrs (sort-by :name (filter #(= :custom (:type %)) @(:traits ch)))
-        rws (apply str (map (partial custom-row ch) ctrs))]
-    (html (table {:id "custom-traits"} rws))))
+  (let [ctrs (sort-by :name (filter #(= :custom (:type %)) @(:traits ch)))]
+    (apply str (map (partial custom-row ch) ctrs))))
 
 (defn styles
   [& body]
@@ -272,7 +288,6 @@
                     "<!--\n"
                     styles
                     "-->"))))
-;(print style)
 
 (defn html-page
   [ch]
@@ -281,12 +296,13 @@
         stat (stat-panel ch)
         derived (derived-panel ch)
         damage (damage-panel ch)
-        trait (traits-panel ch)
-        a-trait (a-traits-panel ch)
-        skill (skills-panel ch)
+        trait (traits-rows ch)
+        a-trait (a-traits-rows ch)
+        custom (custom-rows ch)
+        skill (skills-rows ch)
         i-dam (impact-damage-panel ch)
         p-dam (penetrating-damage-panel ch)
-        custom (custom-panel ch)]
+        wpn-notes (weapons-notes-table ch)]
     (dosync
      (str "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" "
           "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> "
@@ -305,13 +321,31 @@
                                                 damage))
                                         (tr (td derived))))
                             (div {:id "bottom-content"}
-                                 (table (tr (td {:rowspan "3"}
-                                                skill)
-                                            (td trait))
-                                        (tr (td a-trait))
-                                        (tr (td custom)))
+                                 (table (tr
+                                         (td
+                                          (table {:id "skills-table"}
+                                                 (tr (th "Name")
+                                                     (th "Roll")
+                                                     (th "Level")
+                                                     (th "Cost")
+                                                     (th "Notes"))
+                                                 skill))
+                                         (td
+                                          (table {:id "traits"}
+                                                 (tr (th "Name")
+                                                     (th "Level")
+                                                     (th "Cost")
+                                                     (th "Notes"))
+                                                 trait
+                                                 (tr (th {:colspan "4"}))
+                                                 a-trait
+                                                 (tr (th {:colspan "4"}))
+                                                 custom))))
                                  i-dam
-                                 p-dam))))))))
+                                 p-dam
+                                 wpn-notes))))))))
+                                            
+                                 
 
 (comment
   (use :reload 'jagsrpg.html)
