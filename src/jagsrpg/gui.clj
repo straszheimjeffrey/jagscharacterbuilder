@@ -475,10 +475,12 @@
                    (tied-spinner ch (-> w :modifiables first))
                    (tied-label ch sym)))
         n (tied-text-box ch (-> w :name-cell :name) 6)
+        nts (notes-button ch (find-frame dp) (:symb-name w))
         d (JButton. "Delete")]
     (do (.add dp n)
         (doseq [lab labels]
           (.add dp lab))
+        (.add dp nts)
         (.add dp d "wrap")
         (.addActionListener d
                    (proxy [ActionListener] []
@@ -487,6 +489,7 @@
                             (.remove dp n)
                             (doseq [lab labels]
                               (.remove dp lab))
+                            (.remove dp nts)
                             (.remove dp d)
                             (validate-to-top dp))))
         (validate-to-top dp))))
