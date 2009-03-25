@@ -14,6 +14,7 @@
 ;;  Created 20 March 2009
 
 (ns jagsrpg.html
+  (:use jagsrpg.utilities)
   (:use jagsrpg.model)
   (:use jagsrpg.damage)
   (:use jagsrpg.secondary)

@@ -14,6 +14,7 @@
 ;;  Created 17 March 2009
 
 (ns jagsrpg.weapons
+  (:use jagsrpg.utilities)
   (:use jagsrpg.model)
   (:use jagsrpg.damage)
   (:use clojure.contrib.dataflow)

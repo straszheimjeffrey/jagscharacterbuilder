@@ -14,11 +14,10 @@
 ;;  Created 20 March 2009
 
 (ns jagsrpg.custom
+  (:use jagsrpg.utilities)
   (:use jagsrpg.model)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.seq-utils :only (find-first)]))
-;  (:use [clojure.contrib.math :only (round)])
-;  (:use [clojure.contrib.except :only (throwf)]))
 
 (def custom-mods
      ['ap-cost 'cp-cost :break

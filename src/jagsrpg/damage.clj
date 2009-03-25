@@ -14,7 +14,7 @@
 ;;  Created 17 March 2009
 
 (ns jagsrpg.damage
-  (:use jagsrpg.model)
+  (:use jagsrpg.utilities)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.math :only (round)])
   (:use [clojure.contrib.seq-utils :only (find-first)])

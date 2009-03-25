@@ -14,35 +14,12 @@
 ;;  Created 14 March 2009
 
 (ns jagsrpg.model
+  (:use jagsrpg.utilities)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
-  (:use [clojure.contrib.str-utils :only (re-split str-join)])
   (:use [clojure.contrib.seq-utils :only (find-first)])
   (:use [clojure.contrib.math :only (round)]))
 
-
-;;; Utilities
-
-(defn symcat
-  "String concats the arguments together to form a symbol"
-  [& args]
-  (symbol (apply str args)))
-
-(defn var-from-name
-  "Given a symbol x, return ?x"
-  [symb]
-  (symcat "?" symb))
-
-(defn col-from-name
-  "Given a symbol x, return ?*x"
-  [symb]
-  (symcat "?*" symb))
-
-(defn make-display-name
-  "Converts name such as fat-obese to Fat Obese"
-  [name]
-  (str-join " " (map #(apply str (Character/toUpperCase (first %)) (next %))
-                     (re-split #"-" (str name)))))
 
 ;;; Modifiables
 

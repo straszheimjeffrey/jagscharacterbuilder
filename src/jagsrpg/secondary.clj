@@ -14,6 +14,7 @@
 ;;  Created 15 March 2009
 
 (ns jagsrpg.secondary
+  (:use jagsrpg.utilities)
   (:use jagsrpg.model)
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)]))

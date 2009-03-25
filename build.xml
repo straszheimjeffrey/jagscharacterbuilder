@@ -46,6 +46,7 @@
         <path location="${lib-folder}/miglayout-3.7-swing.jar"/>
       </classpath>
       <sysproperty key="clojure.compile.path" value="${build}"/>
+      <arg value="jagsrpg.utilities"/>
       <arg value="jagsrpg.model"/>
       <arg value="jagsrpg.secondary"/>
       <arg value="jagsrpg.damage"/>
