@@ -81,6 +81,21 @@
   [txt]
   (html (th {:class "damage-header"} txt)))
 
+(defn- create-striped-rows
+  [rows]
+  (loop [f (first rows)
+         s (second rows)
+         r (nnext rows)
+         acc ""]
+    (if f
+      (recur (first r) (second r) (nnext r)
+             (str acc (if s
+                        (str (html (tr {:class "odd-row"} f))
+                             (html (tr {:class "even-row"} s)))
+                        (html (tr {:class "odd-row"} f)))))
+      acc)))
+
+
 ;;; The panels
 
 (defn- top-panel
@@ -125,7 +140,7 @@
                (tr (th "Base Damage") (td ?base-damage))
                (tr (th "Grapple") (td ?offensive-grapple "/"
                                       ?defensive-grapple)
-                   (th "Armor") (td "dr " ?armor-dr " pen " ?armor-pen)))))
+                   (th "Armor") (td "dr " ?armor-dr (br) " pen " ?armor-pen)))))
 
 (defn- damage-panel
   [ch]
@@ -135,14 +150,17 @@
                (tr (th "Minor") (td ?minor-wound-level))
                (tr (th "Major") (td ?major-wound-level))
                (tr (th "Critical") (td ?critical-wound-level))
-               (tr (th {:rowspan 3} "Hurt") (td {:rowspan 3} ?hurt-condition)
+               (tr {:class "damage-division"}
+                   (th {:rowspan 3} "Hurt") (td {:rowspan 3} ?hurt-condition)
                    (th "Minor") (td "1"))
                (tr (th "Major") (td ?major-wound-level))
                (tr (th "Critical") (td ?critical-wound-level))
-               (tr (th {:rowspan 2} "Injured") (td {:rowspan 2} ?injured-condition)
+               (tr {:class "damage-division"}
+                   (th {:rowspan 2} "Injured") (td {:rowspan 2} ?injured-condition)
                    (th "Major") (td ?minor-wound-level))
                (tr (th "Critical") (td ?major-wound-level))
-               (tr (th {:rowspan 2} "Serious") (td {:rowspan 2} ?serious-condition)
+               (tr {:class "damage-division"}
+                   (th {:rowspan 2} "Serious") (td {:rowspan 2} ?serious-condition)
                    (th "Major") (td "1"))
                (tr (th "Critical") (td ?minor-wound-level)))))
 
@@ -185,7 +203,7 @@
              (let [v (get-value (:model ch) s)]
                (html (td v))))
         vals (apply str (map td symbs))]
-    (html (tr (th name) vals))))
+    (str (th name) vals)))
 
 (defn- hth-skill-rows
   [ch sk]
@@ -196,16 +214,14 @@
                  (when (-> cells empty? not)
                    (damage-row ch
                                (make-display-name name)
-                               (get-impact-symbols name)))))
-        rows (remove nil? (map step names))]
-    (apply str rows)))
+                               (get-impact-symbols name)))))]
+    (remove nil? (map step names))))
 
 (defn- weapon-row
   [ch wpn]
   (let [name (get-value (:model ch) (symcat (:symb-name wpn) "-name"))
-        symbs (:symbols wpn)
-        html (damage-row ch name symbs)]
-    html))
+        symbs (:symbols wpn)]
+    (damage-row ch name symbs)))
 
 (defn- impact-damage-panel
   [ch]
@@ -214,26 +230,25 @@
         pr (damage-row ch "Punch" (get-impact-symbols 'basic-punch))
         cr (damage-row ch "Cross" (get-impact-symbols 'basic-cross))
         kr (damage-row ch "Kick" (get-impact-symbols 'basic-kick))
-        s-rs (apply str (map (partial hth-skill-rows ch) hths))
-        w-rs (apply str (map (partial weapon-row ch) i-wpns))
-        header-ns (cons "Name" impact-names)
-        header (apply str (map th-wpn header-ns))]
-    (html (table {:id "impact-damage"}
-                 (tr header)
-                 pr
-                 cr
-                 kr
-                 s-rs
-                 w-rs))))
+        s-rs (mapcat (partial hth-skill-rows ch) hths)
+        w-rs (map (partial weapon-row ch) i-wpns)
+        rows (create-striped-rows (concat [pr cr kr] s-rs w-rs))
+        headers (map th-wpn impact-names)
+        header (apply str (th "Name") headers)]
+    (html (table {:id "impact-damage"
+                  :class "damage-table"}
+                 (tr {:class "table-header"} header)
+                 rows))))
         
 (defn- penetrating-damage-panel
   [ch]
   (let [i-wpns (sort-by :name (filter #(= :penetrating-weapon (:type %)) @(:traits ch)))
-        w-rs (apply str (map (partial weapon-row ch) i-wpns))
-        header-ns (cons "Name" penetrating-names)
-        header (apply str (map th-wpn header-ns))]
-    (html (table {:id "penetrating-damage"}
-                 (tr header)
+        w-rs (create-striped-rows (map (partial weapon-row ch) i-wpns))
+        headers (map th-wpn penetrating-names)
+        header (apply str (th "Name") headers)]
+    (html (table {:id "penetrating-damage"
+                  :class "damage-table"}
+                 (tr {:class "table-header"} header)
                  w-rs))))
 
 (defn- weapon-notes-row
@@ -241,7 +256,7 @@
   (let [name (get-value (:model ch) (symcat (:symb-name wpn) "-name"))
         notes (-> wpn :notes get-value-from-cell)]
     (if (and notes (> (.length notes) 0))
-      (html (tr (td name) (td notes)))
+      (html (tr (th name) (td notes)))
       "")))
 
 (defn- weapons-notes-table
@@ -251,9 +266,11 @@
                                     @(:traits ch)))
         rows (apply str (map (partial weapon-notes-row ch) wpns))]
     (if (> (.length rows) 0)
-      (html (table (tr (th "Name") (th "Notes"))
+      (html (table {:id "weapons-notes-table"
+                    :class "weapons-table"}
+                   (tr {:class "table-header"} (th "Name") (th "Notes"))
                    rows))
-      rows)))
+      "")))
 
 (defn- custom-row
   [ch tr]
@@ -282,14 +299,25 @@
     (apply str (map each pairs))))
         
 (def style
-     (let [styles (styles "body" {:font-family "Verdana, Geneva, sans-serif"
-                                  :font-size "small"}
-                          "td, th" {:vertical-align "top"
-                                    :padding "2px 4px"}
-                          "td" {:text-align "center"}
-                          "th" {:text-align "left"}
-                          "th.damage-header" {:text-align "center"
-                                              :min-width "0.125in"})]
+     (let [styles
+           (styles "body" {:font-family "Verdana, Geneva, sans-serif"
+                           :font-size "small"}
+                   "table" {:border-collapse "collapse"}
+                   "#top-content-table table" {:margin "2px"
+                                               :padding "8px"
+                                               :background-color "#eee"}
+                   "td, th" {:vertical-align "top"
+                             :padding "2px 4px 2px 8px"
+                             :text-align "left"}
+                   ".damage-table td, .damage-header" {:text-align "center"
+                                                       :min-width "0.125in"
+                                                       :padding "2px 4px"}
+                   "tr.table-header th" {:border-bottom "1px solid black"}
+                   "tr.damage-division td, tr.damage-division th"
+                                        {:border-top "1px solid black"}
+                   "table.weapons-table, table.damage-table" {:margin "5px 0px 5px 0px"}
+                   ".odd-row" {:background-color "#eee"}
+                   )]
        (html (style {:type "text/css"}
                     "<!--\n"
                     styles
@@ -320,8 +348,9 @@
                             (title name)
                             style)
                       (body (div {:id "top-content"}
-                                 (table (tr {:colspan "2"}
-                                            (td top))
+                                 (table {:id "top-content-table"}
+                                        (tr
+                                            (td {:colspan "2"} top))
                                         (tr (td stat)
                                             (td {:rowspan "2"}
                                                 damage))
@@ -330,7 +359,8 @@
                                  (table (tr
                                          (td
                                           (table {:id "skills-table"}
-                                                 (tr (th "Name")
+                                                 (tr {:class "table-header"}
+                                                     (th "Name")
                                                      (th "Roll")
                                                      (th "Level")
                                                      (th "Cost")
@@ -338,7 +368,8 @@
                                                  skill))
                                          (td
                                           (table {:id "traits"}
-                                                 (tr (th "Name")
+                                                 (tr {:class "table-header"}
+                                                     (th "Name")
                                                      (th "Level")
                                                      (th "Cost")
                                                      (th "Notes"))
@@ -356,6 +387,7 @@
 (comment
   (use :reload 'jagsrpg.html)
   (use 'clojure.contrib.stacktrace) (e)
+  (use 'clojure.contrib.trace)
 )
 
 ;; End of file
