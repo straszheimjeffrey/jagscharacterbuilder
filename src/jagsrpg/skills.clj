@@ -98,28 +98,24 @@
       (+ n roll)
       n)))
 
+(defn- damage-cell
+  [n ar lv rl add]
+  `(cell ~n (j-add* (+ (damage-comp ~ar ~lv ~rl)
+                       ~'?hand-to-hand-damage)
+                    ~add)))
+
 (defmacro hth-skill
   [n punch cross kick cells]
   (let [level (var-from-name (symcat n "-level"))
         roll (var-from-name (symcat n "-roll"))
-        punch-dam (punch-name n)
-        cross-dam (cross-name n)
-        kick-dam (kick-name n)
-        punch-cell `(cell ~punch-dam (+ (damage-comp ~punch ~level ~roll)
-                                        ~'?hand-to-hand-damage))
-        cross-cell `(cell ~cross-dam (j-add (+ (damage-comp ~cross ~level ~roll)
-                                               ~'?hand-to-hand-damage)
-                                            1))
-        kick-cell `(cell ~kick-dam (j-add (+ (damage-comp ~kick ~level ~roll)
-                                             ~'?hand-to-hand-damage)
-                                          2))
-        punch-chart (impact-chart punch-dam)
-        cross-chart (impact-chart cross-dam)
-        kick-chart (impact-chart kick-dam)
-        cells (vec (concat (list* punch-cell cross-cell kick-cell cells)
-                           punch-chart
-                           cross-chart
-                           kick-chart))]
+        step (fn [arr add n]
+               (when arr
+                 (conj (impact-chart n)
+                       (damage-cell n arr level roll add))))
+        damages (mapcat step [punch cross kick]
+                             [0 1 2]
+                             [(punch-name n) (cross-name n) (kick-name n)])
+        cells (vec (concat cells damages))]
     `(skill-abstract ~n :expensive [~'agi] ~cells :hth)))
  
 (defn compute-grapple-level
@@ -144,7 +140,7 @@
       (hth-skill boxing
                  [0 1 2 5]
                  [1 3 4 -9]
-                 [0 0 0 0]
+                 nil          ; boxers can't kick
                  [(cell hurt-condition-mods
                         (condp = ?boxing-level
                                  1 0

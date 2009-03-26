@@ -575,11 +575,17 @@
 (defn add-hth-skill-to-gui
   [ch dp trait dam-dp]
   (let [bn (:symb-name trait)
-        [ap rp] (attach-model-weapon-to-gui ch dam-dp (symcat bn "-punch"))
-        [ac rc] (attach-model-weapon-to-gui ch dam-dp (symcat bn "-cross"))
-        [ak rk] (attach-model-weapon-to-gui ch dam-dp (symcat bn "-kick"))
-        add (fn [] (do (ap) (ac) (ak)))
-        remove (fn [] (do (rp) (rc) (rk)))]
+        attach (fn [nm]
+                 (let [cells (get-cells (:model ch) nm)]
+                   (when (-> cells empty? not)
+                     (attach-model-weapon-to-gui ch dam-dp nm))))
+        [ap rp] (attach (symcat bn "-punch"))
+        [ac rc] (attach (symcat bn "-cross"))
+        [ak rk] (attach (symcat bn "-kick"))
+        add (fn [] (doseq [fn (remove nil? [ap ac ak])]
+                     (fn)))
+        remove (fn [] (doseq [fn (remove nil? [rp rc rk])]
+                        (fn)))]
     (add-trait-to-gui ch dp trait add remove)))
   
 
