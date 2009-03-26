@@ -212,12 +212,18 @@
   [ch]
   (let [hths (sort-by :name (filter #(= :hth (:hth %)) @(:traits ch)))
         i-wpns (sort-by :name (filter #(= :impact-weapon (:type %)) @(:traits ch)))
+        pr (damage-row ch "Punch" (get-impact-symbols 'basic-punch))
+        cr (damage-row ch "Cross" (get-impact-symbols 'basic-cross))
+        kr (damage-row ch "Kick" (get-impact-symbols 'basic-kick))
         s-rs (apply str (map (partial hth-skill-rows ch) hths))
         w-rs (apply str (map (partial weapon-row ch) i-wpns))
         header-ns (cons "Name" impact-names)
         header (apply str (map th-wpn header-ns))]
     (html (table {:id "impact-damage"}
                  (tr header)
+                 pr
+                 cr
+                 kr
                  s-rs
                  w-rs))))
         
