@@ -470,7 +470,7 @@
 
 ;; Weapons stuff
 
-(defn attach-model-trait-to-gui
+(defn attach-model-weapon-to-gui
   "Returns functions [add remove] to add or remove the model
    weapon (bn) to the display panel (dp)"
   [ch dp bn]
@@ -575,9 +575,9 @@
 (defn add-hth-skill-to-gui
   [ch dp trait dam-dp]
   (let [bn (:symb-name trait)
-        [ap rp] (attach-model-trait-to-gui ch dam-dp (symcat bn "-punch"))
-        [ac rc] (attach-model-trait-to-gui ch dam-dp (symcat bn "-cross"))
-        [ak rk] (attach-model-trait-to-gui ch dam-dp (symcat bn "-kick"))
+        [ap rp] (attach-model-weapon-to-gui ch dam-dp (symcat bn "-punch"))
+        [ac rc] (attach-model-weapon-to-gui ch dam-dp (symcat bn "-cross"))
+        [ak rk] (attach-model-weapon-to-gui ch dam-dp (symcat bn "-kick"))
         add (fn [] (do (ap) (ac) (ak)))
         remove (fn [] (do (rp) (rc) (rk)))]
     (add-trait-to-gui ch dp trait add remove)))
@@ -644,6 +644,14 @@
             (add-trait-to-gui ch dp t)))
         panel)))
 
+(defn add-base-damage
+  "Adds the basic damage types from ch to dp"
+  [ch dp]
+  (let [[ap _] (attach-model-weapon-to-gui ch dp 'basic-punch)
+        [ac _] (attach-model-weapon-to-gui ch dp 'basic-cross)
+        [ak _] (attach-model-weapon-to-gui ch dp 'basic-kick)]
+    (do (ap) (ac) (ak))))
+
 (defn skill-and-weapon-panel
   [ch factories tp]
   (let [[ip idp] (weapon-panel ch
@@ -651,7 +659,8 @@
                                impact-weapons
                                :impact-weapon)
         skill-panel (trait-panel ch factories tp idp)]
-    [skill-panel ip]))
+    (do (add-base-damage ch idp)
+        [skill-panel ip])))
                      
 (defn bottom-panel
   [ch fr]
