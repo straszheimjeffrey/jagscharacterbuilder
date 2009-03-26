@@ -190,16 +190,15 @@
 (defn- hth-skill-rows
   [ch sk]
   (let [sn (:symb-name sk)
-        pn (punch-name sn)
-        cn (cross-name sn)
-        kn (kick-name sn)
-        p-symbs (get-impact-symbols pn)
-        c-symbs (get-impact-symbols cn)
-        k-symbs (get-impact-symbols kn)
-        p-html (damage-row ch (make-display-name pn) p-symbs)
-        c-html (damage-row ch (make-display-name cn) c-symbs)
-        k-html (damage-row ch (make-display-name kn) k-symbs)]
-    (str p-html c-html k-html)))
+        names [(punch-name sn) (cross-name sn) (kick-name sn)]
+        step (fn [name]
+               (let [cells (get-cells (:model ch) name)]
+                 (when (-> cells empty? not)
+                   (damage-row ch
+                               (make-display-name name)
+                               (get-impact-symbols name)))))
+        rows (remove nil? (map step names))]
+    (apply str rows)))
 
 (defn- weapon-row
   [ch wpn]
