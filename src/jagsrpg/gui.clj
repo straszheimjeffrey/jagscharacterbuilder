@@ -492,7 +492,7 @@
                  (if (= sym (:symb-name w))
                    (tied-spinner ch (-> w :modifiables first))
                    (tied-label ch sym)))
-        n (tied-text-box ch (-> w :name-cell :name) 6)
+        n (tied-text-box ch (-> w :name-cell :name) 10)
         nts (notes-button ch (find-frame dp) (:symb-name w))
         d (JButton. "Delete")]
     (do (.add dp n)
