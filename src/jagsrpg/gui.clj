@@ -470,6 +470,22 @@
 
 ;; Weapons stuff
 
+(defn attach-model-trait-to-gui
+  "Returns functions [add remove] to add or remove the model
+   weapon (bn) to the display panel (dp)"
+  [ch dp bn]
+  (let [labels (cons (-> bn make-display-name label)
+                     (map (partial tied-label ch) (get-impact-symbols bn)))
+        add (fn []
+              (do (doseq [lab (butlast labels)]
+                    (.add dp lab))
+                  (.add dp (last labels) "wrap")))
+        remove (fn []
+                 (doseq [lab labels]
+                   (.remove dp lab)))]
+    [add remove]))
+        
+
 (defn add-weapon-to-gui
   [ch dp w]
   (let [labels (for [sym (:symbols w)]
@@ -558,26 +574,12 @@
 
 (defn add-hth-skill-to-gui
   [ch dp trait dam-dp]
-  (let [base-name (:symb-name trait)
-        labels (fn [base]
-                 (cons (-> base make-display-name label)
-                       (map (partial tied-label ch) (get-impact-symbols base))))
-        punch-labels (labels (symcat base-name "-punch"))
-        cross-labels (labels (symcat base-name "-cross"))
-        kick-labels (labels (symcat base-name "-kick"))
-        add-one-set (fn [labels]
-                      (do (doseq [lab (butlast labels)]
-                            (.add dam-dp lab))
-                          (.add dam-dp (last labels) "wrap")))
-        remove-one-set (fn [labels]
-                         (doseq [lab labels]
-                           (.remove dam-dp lab)))
-        add (fn [] (do (add-one-set punch-labels)
-                       (add-one-set cross-labels)
-                       (add-one-set kick-labels)))
-        remove (fn [] (do (remove-one-set punch-labels)
-                          (remove-one-set cross-labels)
-                          (remove-one-set kick-labels)))]
+  (let [bn (:symb-name trait)
+        [ap rp] (attach-model-trait-to-gui ch dam-dp (symcat bn "-punch"))
+        [ac rc] (attach-model-trait-to-gui ch dam-dp (symcat bn "-cross"))
+        [ak rk] (attach-model-trait-to-gui ch dam-dp (symcat bn "-kick"))
+        add (fn [] (do (ap) (ac) (ak)))
+        remove (fn [] (do (rp) (rc) (rk)))]
     (add-trait-to-gui ch dp trait add remove)))
   
 
