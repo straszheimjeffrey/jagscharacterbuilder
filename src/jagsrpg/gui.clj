@@ -202,7 +202,7 @@
 
 (defn cost-panel
   [ch]
-  (let [layout (MigLayout.)
+  (let [layout (MigLayout. "" "[][].25in[][].2in[][]")
         panel (JPanel. layout)]
     (doto panel
       (.add (label "Name"))
@@ -321,7 +321,7 @@
 
 (defn top-panel
   [ch]
-  (let [layout (MigLayout. "wrap 2" "[].1in[]" "[].1in[]")
+  (let [layout (MigLayout. "wrap 2")
         panel (JPanel. layout)]
     (doto panel
       (.add (cost-panel ch) "sx 2")
@@ -816,11 +816,13 @@
 
 (defn- add-character-to-frame
   [fr ch]
-  (let [cp (.getContentPane fr)]
+  (let [cp (.getContentPane fr)
+        layout (MigLayout. "wrap 1, fill")]
     (do (doto cp
           (.removeAll)
+          (.setLayout layout)
           (.add (top-panel ch))
-          (.add (bottom-panel ch fr) "growprio 200"))
+          (.add (bottom-panel ch fr) "growprio 200, grow 200"))
         (.pack fr)
         (checkpoint-character fr ch))))
 
@@ -853,19 +855,17 @@
      (swap! frame-count inc)
      (show-frame ch (JFrame. "Jags Character")))
   ([ch frame]
-     (let [layout (MigLayout. "fill, wrap 1" "" "[].2in[growprio 200]")]
-       (do (doseq [l (.getListeners frame WindowListener)]
-             (.removeWindowListener frame l))
-           (doto frame
-             (.setLayout layout)
-             (add-menu-bar ch)
-             (add-character-to-frame ch)
-             (.setDefaultCloseOperation JFrame/DO_NOTHING_ON_CLOSE)
-             (.addWindowListener (proxy [WindowAdapter] []
-                        (windowClosing [evt] (window-closing frame ch))
-                        (windowClosed [evt] (window-closed))))
-             (.setVisible true)
-             (.show))))))
+     (do (doseq [l (.getListeners frame WindowListener)]
+           (.removeWindowListener frame l))
+         (doto frame
+           (add-menu-bar ch)
+           (add-character-to-frame ch)
+           (.setDefaultCloseOperation JFrame/DO_NOTHING_ON_CLOSE)
+           (.addWindowListener (proxy [WindowAdapter] []
+                                 (windowClosing [evt] (window-closing frame ch))
+                                 (windowClosed [evt] (window-closed))))
+           (.setVisible true)
+           (.show)))))
            
 
 (comment
