@@ -66,8 +66,11 @@
               [" />"]))))
 
 (defmacro html
-  [tags]
-  (list* 'html* tags))
+  [& tags]
+  (let [step (fn [each]
+               `(html* ~@each))
+        items (map step tags)]
+    `(str ~@ items)))
 
 (defn- td
   [txt]
@@ -163,6 +166,18 @@
                    (th {:rowspan 2} "Serious") (td {:rowspan 2} ?serious-condition)
                    (th "Major") (td "1"))
                (tr (th "Critical") (td ?minor-wound-level)))))
+
+(defn description
+  [ch]
+  (html (table {:id "description"}
+               (tr (th "Eye Color") (td ?eye-color))
+               (tr (th "Hair Color") (td ?hair-color))
+               (tr (th "Gender") (td ?gender))
+               (tr (th "Height") (td ?height)))
+        (h2 "Description")
+        (p ?description)
+        (h2 "Background")
+        (p ?background)))
 
 (defn- trait-row
   [tr]
@@ -297,12 +312,17 @@
                      flat (apply str (map each styles))]
                  (str selector " {\n" flat "}\n")))]
     (apply str (map each pairs))))
-        
+
+
 (def style
      (let [styles
            (styles "body" {:font-family "Verdana, Geneva, sans-serif"
                            :font-size "small"}
                    "table" {:border-collapse "collapse"}
+                   "h2" {:font-size "1.2em"
+                         :font-weight "bold"
+                         :margin "10px 0px 5px 0px"}
+                   "p" {:margin "5px 0px"}
                    "#top-content-table table" {:margin "2px"
                                                :padding "8px"
                                                :background-color "#eee"}
@@ -330,6 +350,7 @@
         stat (stat-panel ch)
         derived (derived-panel ch)
         damage (damage-panel ch)
+        description (description ch)
         trait (traits-rows ch)
         a-trait (a-traits-rows ch)
         custom (custom-rows ch)
@@ -380,7 +401,10 @@
                                                  custom))))
                                  i-dam
                                  p-dam
-                                 wpn-notes))))))))
+                                 wpn-notes)
+                            (div {:id "extra-content"}
+                                 description))))))))
+
                                             
                                  
 
