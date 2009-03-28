@@ -667,6 +667,25 @@
         skill-panel (trait-panel ch factories tp idp)]
     (do (add-base-damage ch idp)
         [skill-panel ip])))
+
+(defn description-panel
+  "Adds the description panel"
+  [ch]
+  (let [layout (MigLayout. "wrap 8")
+        panel (JPanel. layout)]
+    (doto panel
+      (.add (label "Eye Color"))
+      (.add (tied-text-box ch 'eye-color 10))
+      (.add (label "Hair Color"))
+      (.add (tied-text-box ch 'hair-color 10))
+      (.add (label "Gender"))
+      (.add (tied-text-box ch 'gender 10))
+      (.add (label "Height"))
+      (.add (tied-text-box ch 'height 10))
+      (.add (label "Description") "sx 4")
+      (.add (label "Background") "sx 4")
+      (.add (tied-text-area ch 'description 8 25) "sx 4")
+      (.add (tied-text-area ch 'background 8 25) "sx 4"))))
                      
 (defn bottom-panel
   [ch fr]
@@ -676,6 +695,7 @@
                              penetrating-weapons
                              :penetrating-weapon)]
     (doto (JTabbedPane.)
+      (.add "Description" (description-panel ch))
       (.add "Secondary" (trait-panel ch secondary-traits :secondary nil))
       (.add "Skills" skill-panel)
       (.add "Traits" (trait-panel ch standard-traits :trait nil))

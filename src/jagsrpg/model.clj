@@ -247,6 +247,13 @@
                (cell serious-condition (apply + (* 2 ?damage-points)
                                                 ?*serious-condition-mods))
 
+               (cell :source eye-color "")
+               (cell :source hair-color "")
+               (cell :source gender "")
+               (cell :source height "")
+               (cell :source description "")
+               (cell :source background "")
+
                ;; Ensure the max. number of secondary stat mods are respected
                (cell :validator
                      (when (> (count ?*secondary-stat-modifier) 3)
