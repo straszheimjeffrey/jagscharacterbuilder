@@ -321,12 +321,12 @@
 
 (defn top-panel
   [ch]
-  (let [layout (MigLayout. "wrap 2")
+  (let [layout (MigLayout. "wrap 3")
         panel (JPanel. layout)]
     (doto panel
       (.add (cost-panel ch) "sx 2")
-      (.add (main-stat-panel ch))
       (.add (damage-panel ch) "sy 2")
+      (.add (main-stat-panel ch))
       (.add (derived-stat-panel ch)))))
 
 
