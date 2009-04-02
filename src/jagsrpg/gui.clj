@@ -708,6 +708,7 @@
 ;;; Menu Operations
 
 (def checkpoint-property "jags-character-checkpoint")
+(def file-property "jags-character-file")
 
 (def last-folder (atom nil))
 
@@ -723,6 +724,12 @@
   (let [cp (.getContentPane fr)
         cur-serial (serialize-character ch)]
     (.putClientProperty cp checkpoint-property cur-serial)))
+
+(defn character-file
+  "What was the last file name saved at, or set the last filename"
+  ([fr] (.. fr (getContentPane) (getClientProperty file-property)))
+  ([fr file] (let [cp (.getContentPane fr)]
+               (.putClientProperty cp file-property file))))
 
 (def file-filter (proxy [FileFilter] []
                   (accept [f]
@@ -766,9 +773,10 @@
     (with-open [w (writer (fix-name file))]
       (binding [*out* w]
         (pr (serialize-character ch)))
-      (checkpoint-character fr ch))))
+      (checkpoint-character fr ch)
+      (character-file fr file))))
 
-(defn save-character
+(defn save-as-character
   [fr ch]
   (let [chooser (JFileChooser.)
         cm (-> ch :model (get-cell 'name) :value deref)]
@@ -782,6 +790,14 @@
             (write-character fr ch (.getSelectedFile chooser))
             true)
         false))))
+
+(defn save-character
+  [fr ch]
+  (let [file (character-file fr)]
+    (if file
+      (do (write-character fr ch file)
+          true)
+      (save-as-character fr ch))))
 
 (defn save-character-as-html
   [fr ch]
@@ -812,7 +828,8 @@
         menu-new (JMenuItem. "New")
         menu-open (JMenuItem. "Open")
         menu-save (JMenuItem. "Save")
-        menu-html (JMenuItem. "as HTML")
+        menu-save-as (JMenuItem. "Save as")
+        menu-html (JMenuItem. "Save as HTML")
         menu-close (JMenuItem. "Close")]
     (do
       (.addActionListener menu-new
@@ -827,6 +844,10 @@
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                             (save-character fr ch))))
+      (.addActionListener menu-save-as
+                 (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                            (save-as-character fr ch))))
       (.addActionListener menu-html
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
@@ -839,6 +860,7 @@
       (.add file menu-new)
       (.add file menu-open)
       (.add file menu-save)
+      (.add file menu-save-as)
       (.add file menu-html)
       (.add file menu-close)
       (.setJMenuBar fr bar))))
