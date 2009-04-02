@@ -321,7 +321,7 @@
 
 (defn top-panel
   [ch]
-  (let [layout (MigLayout. "wrap 3")
+  (let [layout (MigLayout. "wrap 3, aligny top")
         panel (JPanel. layout)]
     (doto panel
       (.add (cost-panel ch) "sx 2")
@@ -709,6 +709,8 @@
 
 (def checkpoint-property "jags-character-checkpoint")
 
+(def last-folder (atom nil))
+
 (defn character-changed?
   [fr ch]
   (let [cp (.getContentPane fr)
@@ -742,32 +744,42 @@
   [fr ch]
   (let [chooser (JFileChooser.)]
     (do
+      (.setCurrentDirectory chooser @last-folder)
       (.setFileFilter chooser file-filter)
       (let [result (.showOpenDialog chooser fr)]
         (when (= result JFileChooser/APPROVE_OPTION)
+          (swap! last-folder (fn [_]
+                               (.. chooser (getSelectedFile) (getParentFile))))
           (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
             (let [n (read r)
                   nch (deserialize-character n)]
               (if (character-changed? fr ch)
                 (show-frame nch)
                 (show-frame nch fr)))))))))
-              
+
+(defn write-character
+  [fr ch file]
+  (let [fix-name (fn [n]
+                     (if (.accept file-filter n)
+                       n
+                       (File. (str (.getPath n) ".jags"))))]
+    (with-open [w (writer (fix-name file))]
+      (binding [*out* w]
+        (pr (serialize-character ch)))
+      (checkpoint-character fr ch))))
+
 (defn save-character
   [fr ch]
   (let [chooser (JFileChooser.)
         cm (-> ch :model (get-cell 'name) :value deref)]
     (.setFileFilter chooser file-filter)
+    (.setCurrentDirectory chooser @last-folder)
     (.setSelectedFile chooser (File. (str cm ".jags")))
-    (let [result (.showSaveDialog chooser fr)
-          fix-name (fn [n]
-                     (if (.accept file-filter n)
-                       n
-                       (File. (str (.getPath n) ".jags"))))]
+    (let [result (.showSaveDialog chooser fr)]
       (if (= result JFileChooser/APPROVE_OPTION)
-        (do (with-open [w (writer (fix-name (.getSelectedFile chooser)))]
-              (binding [*out* w]
-                (pr (serialize-character ch))))
-            (checkpoint-character fr ch)
+        (do (swap! last-folder (fn [_]
+                                 (.. chooser (getSelectedFile) (getParentFile))))
+            (write-character fr ch (.getSelectedFile chooser))
             true)
         false))))
 

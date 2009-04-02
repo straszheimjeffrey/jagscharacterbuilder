@@ -54,7 +54,8 @@
                  (let [col (type-to-trait-collection (second td))
                        factory (find-first #(= (first td) (:name %)) col)]
                    ((:make factory))))]
-    (do (add-traits ch traits)
+    (do (when (seq traits)
+          (add-traits ch traits))
         (update-values (:model ch) (:source-cells ser))
         ch)))
     
