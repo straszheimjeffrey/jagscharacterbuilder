@@ -760,6 +760,7 @@
         (when (= result JFileChooser/APPROVE_OPTION)
           (swap! last-folder (fn [_]
                                (.. chooser (getSelectedFile) (getParentFile))))
+          (character-file fr (.getSelectedFile chooser))
           (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
             (let [n (read r)
                   nch (deserialize-character n)]
