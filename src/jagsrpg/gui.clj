@@ -53,13 +53,16 @@
                       JSplitPane
                       JDialog
                       JOptionPane
+                      KeyStroke
                       SwingUtilities)
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
                          WindowListener
                          WindowAdapter
                          MouseAdapter
-                         MouseEvent)
+                         MouseEvent
+                         InputEvent
+                         KeyEvent)
         '(javax.swing.event ChangeListener
                             DocumentListener)
         '(java.awt FlowLayout)
@@ -830,7 +833,11 @@
         menu-save (JMenuItem. "Save")
         menu-save-as (JMenuItem. "Save as")
         menu-html (JMenuItem. "Save as HTML")
-        menu-close (JMenuItem. "Close")]
+        menu-close (JMenuItem. "Close")
+        add-key (fn [menu key]
+                  (.setAccelerator menu
+                                   (. KeyStroke (getKeyStroke key
+                                                              InputEvent/CTRL_MASK))))]
     (do
       (.addActionListener menu-new
                  (proxy [ActionListener] []
@@ -856,6 +863,9 @@
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                             (close-frame fr ch))))
+      (add-key menu-open KeyEvent/VK_O)
+      (add-key menu-save KeyEvent/VK_S)
+      (add-key menu-save-as KeyEvent/VK_A)
       (.add bar file)
       (.add file menu-new)
       (.add file menu-open)
