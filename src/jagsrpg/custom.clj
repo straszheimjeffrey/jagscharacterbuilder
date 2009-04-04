@@ -76,12 +76,17 @@
 
 (def custom-traits (make-custom-traits))
 
-(defn get-custom-trait
+(defn- get-custom-trait
   "Scans to find a custom trait not in collection n"
   [n]
   (letfn [(step [w]
                 (not-any? #(= (:name w) (:name %)) n))]
       (find-first step custom-traits)))
+
+(defn get-free-custom-trait
+  "Gets the next free trait for character"
+  [ch]
+  (get-custom-trait @(:traits ch)))
 
 (defn get-source-list
   "Returns a list of [display-name, cell-name] for the sources"
@@ -93,19 +98,35 @@
                  n))]
     (map step custom-mods)))
 
+(defn serialize-trait
+  "Converts a trait to a serialized representation"
+  [tr]
+  (let [name (:symb-name tr)
+        len (.length (str name))
+        cells (filter source-cell? (:cells tr))
+        names (map (fn [c] (.substring (-> c :name str) len)) cells)
+        vals (map get-value-from-cell cells)]
+    (zipmap names vals)))
+
+(defn deserialize-trait
+  "Unserialized a trait, then adds it to a character"
+  [ch trs]
+  (let [tr ((:make (get-free-custom-trait ch)))
+        n (:symb-name tr)
+        vals (into {} (map (fn [[k v]] [(symcat n k) v]) trs))]
+    (dosync (add-traits ch [tr])
+            (update-values (:model ch) vals)
+            tr)))
+
 (comment
 
-  (def fred ((:make (custom-trait molly))))
-  (:modifiables fred)
+  (def cs ((:make (custom-trait custom-trait-0))))
+  (:modifiables cs) (:symb-name cs)
+  (def cust (serialize-trait cs))
 
-  (def ch (build-character))
-  (print-dataflow (:model ch))
-
-  (add-trait ch fred)
-  (add-cells (:model ch) [(cell perception-mods ?molly-perception)])
-  (get-source-list fred)
-
-  (macroexpand '(custom-trait molly))
+  (def fred (build-character))
+  (print-dataflow (:model fred))
+  (deserialize-trait fred cust)
 
   (use :reload 'jagsrpg.custom)
   (use 'clojure.contrib.stacktrace) (e)

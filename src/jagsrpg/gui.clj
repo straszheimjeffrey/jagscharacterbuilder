@@ -335,6 +335,51 @@
 
 ;;; Bottom Panels
 
+;; Custom Trait Serialization
+
+(def custom-folder (atom nil))
+
+(def trait-file-filter (proxy [FileFilter] []
+                         (accept [f]
+                                 (.matches (.getName f) ".*\\.trait$"))
+                         (getDescription [] "JAGS Custom Trait")))
+
+(defn- save-custom-trait
+  [ch fr ct]
+  (let [chooser (JFileChooser.)
+        n (get-value (:model ch) (symcat (:symb-name ct) "-name"))
+        fix-name (fn [n]
+                   (if (.accept trait-file-filter n)
+                     n
+                     (File. (str (.getPath n) ".trait"))))]
+    (.setFileFilter chooser trait-file-filter)
+    (.setCurrentDirectory chooser @custom-folder)
+    (.setSelectedFile chooser (File. (str n ".trait")))
+    (when (= JFileChooser/APPROVE_OPTION
+             (.showSaveDialog chooser fr))
+      (swap! custom-folder (fn [_]
+                             (.. chooser (getSelectedFile) (getParentFile))))
+      (with-open [w (writer (fix-name (.getSelectedFile chooser)))]
+        (binding [*out* w]
+          (pr (serialize-trait ct)))))))
+
+(declare add-custom-to-gui)
+
+(defn- load-custom-trait
+  [ch fr dp]
+  (let [chooser (JFileChooser.)]
+    (.setFileFilter chooser trait-file-filter)
+    (.setCurrentDirectory chooser @custom-folder)
+    (when (= JFileChooser/APPROVE_OPTION
+             (.showOpenDialog chooser fr))
+      (swap! custom-folder (fn [_]
+                             (.. chooser (getSelectedFile) (getParentFile))))
+      (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
+        (let [trs (read r)]
+          (add-custom-to-gui ch fr dp (deserialize-trait ch trs)))))))
+   
+
+
 ;; Dialogs
 
 (declare notes-button)
@@ -352,7 +397,8 @@
         step (fn [mod]
                [(-> mod :cell :name) mod])
         mod-map (into {} (map step (:modifiables ct)))
-        cb (JButton. "Close")]
+        cb (JButton. "Close")
+        sb (JButton. "Save")]
     (do (.setLayout panel layout)
         (.add panel (label "Optional Trait") "sx 5, wrap")
         (.add panel (label "Name") "right")
@@ -368,11 +414,16 @@
                     (.add panel (tied-spinner ch (mod-map (second f))) "wrap")
                     (.add panel (tied-spinner ch (mod-map (second f)))))))
             (recur (first n) (next n) (fnext n))))
-        (.add panel cb "wrap")
+        (.add panel cb "split 2")
+        (.add panel sb "wrap")
         (.addActionListener cb
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                            (.setVisible dia false))))
+        (.addActionListener sb
+                  (proxy [ActionListener] []
+                    (actionPerformed [evt]
+                         (save-custom-trait ch fr ct))))
         (.add cp (scroll panel))
         dia)))
 
@@ -456,16 +507,22 @@
   (let [layout (MigLayout. "wrap 1")
         panel (JPanel. layout)
         dp (custom-display-panel ch)
-        button (JButton. "Add")
+        ab (JButton. "Add")
+        lb (JButton. "Load")
         cts (filter #(= :custom (:type %)) @(:traits ch))]
     (do (.add panel (scroll dp))
-        (.add panel button)
-        (.addActionListener button
+        (.add panel ab "split 2")
+        (.add panel lb "wrap")
+        (.addActionListener ab
                             (proxy [ActionListener] []
                               (actionPerformed [evt]
-                                    (let [nct ((:make (get-custom-trait @(:traits ch))))]
+                                    (let [nct ((:make (get-free-custom-trait ch)))]
                                       (add-traits ch [nct])
                                       (add-custom-to-gui ch fr dp nct)))))
+        (.addActionListener lb
+                            (proxy [ActionListener] []
+                              (actionPerformed [evt]
+                                               (load-custom-trait ch fr dp))))
         (doseq [ct (sort-by :name cts)]
           (add-custom-to-gui ch fr dp ct))
         panel)))
@@ -611,7 +668,7 @@
                                 (if (:hth tr)
                                   (add-hth-skill-to-gui ch dp tr extra)
                                   (add-trait-to-gui ch dp tr))
-                                (.revalidate panel))))))]
+                                (validate-to-top panel))))))]
     (do
       (doseq [f factories]
         (.addElement lm (:name f)))
