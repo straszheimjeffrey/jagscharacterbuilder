@@ -61,6 +61,8 @@
                    mod-cells# (map second cell-pairs#)
                    name-cell# (cell :source ~(symcat n "-name") "-- custom trait --")
                    notes# (cell :source ~(symcat n "-notes") "")
+                   ; This full-agi stuff is an ugly hack!
+                   ; Eventually I'd like to make modifiables polymorphic
                    full-agi# (cell :source ~(symcat n "-full-agi") false)
                    full-agi-mods# (cell ~'full-agi-bonus-mods
                                         ~(var-from-name (symcat n "-full-agi")))

@@ -24,6 +24,9 @@
 
 ;;; Modifiables
 
+; Currently there is only one type of modifiable -- a "ranged modifieable"
+; TODO: make them polymorphic w/ a boolean modifiable (at least)
+
 ;; A modifiable source cell
 (defstruct modifiable
   :name       ; For display, a String
