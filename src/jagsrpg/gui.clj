@@ -55,7 +55,9 @@
                       JDialog
                       JOptionPane
                       KeyStroke
-                      SwingUtilities)
+                      SwingUtilities
+                      BorderFactory
+                      Timer)
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
                          ItemListener
@@ -67,7 +69,8 @@
                          KeyEvent)
         '(javax.swing.event ChangeListener
                             DocumentListener)
-        '(java.awt FlowLayout)
+        '(java.awt FlowLayout
+                   Color)
         '(net.miginfocom.swing MigLayout))
 
 (def frame-count (atom 0))
@@ -107,6 +110,33 @@
     (if p
       (recur p)
       p)))
+
+
+;;; Error display
+
+(defn- schedule-removal
+  [fr panel]
+  (let [t (atom nil)
+        listener (proxy [ActionListener] []
+                   (actionPerformed [evt]
+                             (.remove (.getContentPane fr) panel)
+                             (validate-to-top fr)
+                             (.stop @t)))
+        timer (Timer. 1000 listener)]
+    (do (swap! t (fn [_] timer))
+        (.start timer))))
+        
+(defn- display-error
+  [fr msg]
+  (let [l (label msg)
+        layout (MigLayout.)
+        panel (JPanel. layout)]
+    (do (.add panel l)
+        (.setBackground panel (Color. 200 0 0))
+        (.setBorder panel (BorderFactory/createLineBorder (Color/BLACK)))
+        (.add (.getContentPane fr) panel "pos 50% 25%" 0)
+        (validate-to-top fr)
+        (schedule-removal fr panel))))
 
 
 ;;; Components tied to model objects
@@ -1031,7 +1061,7 @@
   (swap! frame-count inc)
   @frame-count
 
-  (show-frame character)
+  (display-error (show-frame character) "fred")
   (print-dataflow (:model character))
   (:traits character)
   (def ser1 (serialize-character character))
