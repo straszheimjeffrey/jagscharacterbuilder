@@ -22,7 +22,7 @@
 ;;; Secondary Traits
 
 (def secondary-stat-cost-table
-     (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13]))
+     (make-table 8 [1 2 2 2 3 5 7 8 9 10 11 12 13] "Stat"))
 
 (defn secondary-cost
   "Compute the standard secondary cost"

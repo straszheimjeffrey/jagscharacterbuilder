@@ -21,8 +21,11 @@
   (:use [clojure.contrib.seq-utils :only (find-first)])
   (:use [clojure.contrib.math :only (round floor)]))
 
-
 (def exception-prefix "Display: ")
+
+(defn ex-msg
+  [& msg]
+  (apply str exception-prefix msg))
 
 ;;; Modifiables
 
@@ -48,7 +51,11 @@
          :validator (cell :validator
                           (when (or (< ~var-name ~(first range))
                                     (> ~var-name ~(second range)))
-                            (throwf "%s is out of range %s" ~display-name ~range))))))
+                            (throwf (ex-msg ~display-name
+                                            " Must be between "
+                                            (first ~range)
+                                            " and "
+                                            (second ~range))))))))
 
 (defn get-modifiable-cells
   "Get the cells from a modifiable"
@@ -67,11 +74,20 @@
 
 (defn make-table
   "Returns a lookup table starting at start with values in values"
-  [start values]
-  (fn [n] (nth values (- n start))))
+  [start values error-text]
+  (fn [n] (try (nth values (- n start))
+               (catch Exception e
+                 (throw (Exception. (ex-msg "Out of range: "
+                                            error-text
+                                            " must be between "
+                                            start
+                                            " and "
+                                            (+ start (-> values count dec)))))))))
 
 (def primary-stat-cost-table
-     (make-table 8 [-8 -5 0 5 15 30 50 75 105 140 180 255 275]))
+     (make-table 8
+                 [-8 -5 0 5 15 30 50 75 105 140 180 255 275]
+                 "Primary Stat"))
 
 (defmacro primary-stat-cost
   "Builds a cell for the cost of a primary stat"
@@ -80,7 +96,9 @@
     `(cell ~cost-name (primary-stat-cost-table ~(var-from-name stat)))))
 
 (def build-modifier-table
-     (make-table 7 [-4 -2 -1 0 1 2 4 7 11 18 23 28 38]))
+     (make-table 7
+                 [-4 -2 -1 0 1 2 4 7 11 18 23 28 38]
+                 "BLD"))
 
 (defn compute-grapple-mod
   "Compute the grapple mod from multiple skills, mods is a collection
@@ -101,11 +119,17 @@
       (apply + highest (map step others)))))
 
 (def walking-speed-table
-     (make-table 7 [1 1 2 3 3 3 4 4 4 4 4 4]))
+     (make-table 7
+                 [1 1 2 3 3 3 4 4 4 4 4 4]
+                 "REA"))
 (def running-speed-table
-     (make-table 7 [2 3 3 4 4 4 5 5 5 8 8 10]))
+     (make-table 7
+                 [2 3 3 4 4 4 5 5 5 8 8 10]
+                 "REA"))
 (def sprinting-speed-table
-     (make-table 7 [3 4 5 6 6 6 7 7 7 10 10 12]))
+     (make-table 7
+                 [3 4 5 6 6 6 7 7 7 10 10 12]
+                 "REA"))
 
 (defn make-speed-function
   "Builds the funciton to compute speed"
@@ -126,8 +150,9 @@
     `(cell :validator
            (when (> (count ~(col-from-name symb)) 1)
              (throwf Exception
-                     "Primary stat %s should only have one secondary stat modifier"
-                     ~n)))))
+                     (ex-msg "Primary stat "
+                             ~n
+                             " should only have one secondary stat modifier"))))))
 
 (defstruct jags-character
   :primary-stats    ; The modifiables making the primary stats
@@ -278,7 +303,7 @@
                (cell :validator
                      (when (> (count ?*secondary-stat-modifier) 3)
                        (throwf Exception
-                               "Too many secondary stat modifiers: max 3")))
+                               (ex-msg "Too many secondary stat modifiers: max 3"))))
                (max-secondary-mods phy)
                (max-secondary-mods ref)
                (max-secondary-mods int)]

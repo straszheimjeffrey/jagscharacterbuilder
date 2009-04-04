@@ -22,17 +22,17 @@
 
 
 (def expensive-skill-cost
-     (make-table 8 [1/4 1/2 1 2 3 4 5 6 12 21 29 37 45]))
+     (make-table 8 [1/4 1/2 1 2 3 4 5 6 12 21 29 37 45] "Roll"))
 (def expensive-skill-linked-cost
-     (make-table -3 [1/2 1 2 3 4 6 11 14 19 23]))
+     (make-table -3 [1/2 1 2 3 4 6 11 14 19 23] "Roll"))
 (def standard-skill-cost
-     (make-table 10 [1/4 1/2 1 2 3 4 5 13 21 27 35]))
+     (make-table 10 [1/4 1/2 1 2 3 4 5 13 21 27 35] "Roll"))
 (def standard-skill-linked-cost
-     (make-table -2 [1/4 1/2 1 2 3 4 6 14 23 31]))
+     (make-table -2 [1/4 1/2 1 2 3 4 6 14 23 31] "Roll"))
 (def level-cost-expensive
-     (make-table 1 [-1 0 4 16]))
+     (make-table 1 [-1 0 4 16] "Level"))
 (def level-cost-standard
-     (make-table 1 [-1 0 2 12]))
+     (make-table 1 [-1 0 2 12] "Level"))
 
 (defn lookup-linked-cost
   [table roll stat]

@@ -114,6 +114,8 @@
 
 ;;; Error display
 
+(def error-timeout 1500)
+
 (defn- schedule-removal
   [fr panel]
   (let [t (atom nil)
@@ -122,7 +124,7 @@
                              (.remove (.getContentPane fr) panel)
                              (validate-to-top fr)
                              (.stop @t)))
-        timer (Timer. 1000 listener)]
+        timer (Timer. error-timeout listener)]
     (do (swap! t (fn [_] timer))
         (.start timer))))
         
