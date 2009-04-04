@@ -134,7 +134,7 @@
     (do (.add panel l)
         (.setBackground panel (Color. 200 0 0))
         (.setBorder panel (BorderFactory/createLineBorder (Color/BLACK)))
-        (.add (.getContentPane fr) panel "pos 50% 25%" 0)
+        (.add (.getContentPane fr) panel "pos 25% 25%" 0)
         (validate-to-top fr)
         (schedule-removal fr panel))))
 
@@ -153,7 +153,8 @@
   [el & body]
   `(try ~@body
       (catch Exception e#
-        (display-error (find-frame ~el) (find-message e#)))))
+        (display-error (find-frame ~el) (find-message e#))
+        (throw e#))))
 
 
 ;;; Components tied to model objects
@@ -248,13 +249,15 @@
                           (let [cur-m (get-value-from-cell cell)
                                 cur-gui (.getText text-box)]
                             (when (not= cur-m cur-gui)
-                              (try
-                               (update-values (:model ch)
-                                              {(:name cell) cur-gui})
-                               (catch Exception e
-                                 (SwingUtilities/invokeLater
-                                  (fn []
-                                    (.setText text-box cur-m))))))))]
+                              (error-action text-box
+                                     (try
+                                      (update-values (:model ch)
+                                                     {(:name cell) cur-gui})
+                                      (catch Exception e
+                                        (SwingUtilities/invokeLater
+                                         (fn []
+                                           (.setText text-box cur-m)))
+                                        (throw e)))))))]
     (do
       (.addDocumentListener document
                             (proxy [DocumentListener] []
@@ -459,7 +462,8 @@
                              (.. chooser (getSelectedFile) (getParentFile))))
       (with-open [r (PushbackReader. (FileReader. (.getSelectedFile chooser)))]
         (let [trs (read r)]
-          (add-custom-to-gui ch fr dp (deserialize-trait ch trs)))))))
+          (error-action fr
+                 (add-custom-to-gui ch fr dp (deserialize-trait ch trs))))))))
    
 
 
@@ -569,7 +573,8 @@
         (.addActionListener db
                   (proxy [ActionListener] []
                     (actionPerformed [evt]
-                           (remove-traits ch [ct])
+                           (error-action fr
+                                 (remove-traits ch [ct]))
                            (.remove dp name-label)
                            (.remove dp cp-label)
                            (.remove dp ap-label)
@@ -602,7 +607,8 @@
                             (proxy [ActionListener] []
                               (actionPerformed [evt]
                                     (let [nct ((:make (get-free-custom-trait ch)))]
-                                      (add-traits ch [nct])
+                                      (error-action fr
+                                               (add-traits ch [nct]))
                                       (add-custom-to-gui ch fr dp nct)))))
         (.addActionListener lb
                             (proxy [ActionListener] []
@@ -648,7 +654,7 @@
         (.addActionListener d
                    (proxy [ActionListener] []
                      (actionPerformed [evt]
-                            (remove-traits ch [w])
+                            (error-action dp (remove-traits ch [w]))
                             (.remove dp n)
                             (doseq [lab labels]
                               (.remove dp lab))
@@ -681,7 +687,7 @@
                  (proxy [ActionListener] []
                    (actionPerformed [evt]
                          (let [nw ((:make (get-weapon weapons @(:traits ch))))]
-                           (add-traits ch [nw])
+                           (error-action panel (add-traits ch [nw]))
                            (add-weapon-to-gui ch dp nw)))))
         (doseq [w (sort-by :name ws)]
           (add-weapon-to-gui ch dp w))
@@ -707,14 +713,14 @@
        (.addActionListener d
                            (proxy [ActionListener] []
                              (actionPerformed [evt]
-                                              (remove-traits ch [trait])
-                                              (.remove dp nl)
-                                              (doseq [s sps] (.remove dp s))
-                                              (.remove dp c)
-                                              (.remove dp m)
-                                              (.remove dp d)
-                                              (extra-removes)
-                                              (validate-to-top dp))))
+                                     (error-action dp (remove-traits ch [trait]))
+                                     (.remove dp nl)
+                                     (doseq [s sps] (.remove dp s))
+                                     (.remove dp c)
+                                     (.remove dp m)
+                                     (.remove dp d)
+                                     (extra-removes)
+                                     (validate-to-top dp))))
        (validate-to-top dp))))
 
 (defn add-hth-skill-to-gui
@@ -749,7 +755,7 @@
                           (when f
                             (let [tr ((:make f))]
                               (do
-                                (add-traits ch [tr])
+                                (error-action dp (add-traits ch [tr]))
                                 (if (:hth tr)
                                   (add-hth-skill-to-gui ch dp tr extra)
                                   (add-trait-to-gui ch dp tr))
