@@ -430,7 +430,7 @@
                [(-> mod :cell :name) mod])
         mod-map (into {} (map step (:modifiables ct)))
         cb (JButton. "Close")
-        sb (JButton. "Save")]
+        sb (JButton. "Archive")]
     (do (.setLayout panel layout)
         (.add panel (label "Optional Trait") "sx 5, wrap")
         (.add panel (label "Name") "right")
