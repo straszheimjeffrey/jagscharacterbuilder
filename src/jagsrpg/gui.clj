@@ -145,7 +145,6 @@
 (defn tied-checkbox
   "Build a swing checkbox tied to a boolean"
   [ch stat]
-  (println "stat" stat)
   (let [val (get-value (:model ch) stat)
         checkbox (JCheckBox.)]
     (do (.setSelected checkbox val)
@@ -275,6 +274,8 @@
         (doto left-panel
           (.add (label "DP"))
           (.add (tied-label ch 'damage-points))
+          (.add (label "Abl. Dam."))
+          (.add (tied-label ch 'ablative-damage))
           (.add (label "Perception"))
           (.add (tied-label ch 'perception))
           (.add (label "Initiative"))
@@ -300,9 +301,14 @@
           (.add (label "Armor"))
           (.add (tied-label ch 'armor-dr) "split 2")
           (.add (tied-label ch 'armor-pen))
-          (.add (label "Agi bonus"))
+          (.add (label "Force Field"))
+          (.add (tied-label ch 'force-field))
+          (.add (label "AGI bonus"))
           (.add (tied-label ch 'agi-bonus-hth) "split 2")
-          (.add (tied-label ch 'agi-bonus-ranged)))
+          (.add (tied-label ch 'agi-bonus-ranged))
+          (.add (label "To Be Hit"))
+          (.add (tied-label ch 'tbh-hth) "split 2")
+          (.add (tied-label ch 'tbh-ranged)))
         panel)))
 
 (defn damage-panel

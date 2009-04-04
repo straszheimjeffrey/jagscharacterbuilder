@@ -257,6 +257,11 @@
                                                  (floor (/ ?agi-bonus 2)))
                                              ?*agi-bonus-ranged-mods))
 
+               (cell tbh-hth (apply + (- ?agi-bonus-hth) ?*tbh-hth-mods))
+               (cell tbh-ranged (apply + (- ?agi-bonus-ranged) ?*tbh-ranged-mods))
+               (cell force-field (apply + ?*force-field-mods))
+               (cell ablative-damage (apply + ?*ablative-damage-mods))
+
                (cell :source eye-color "")
                (cell :source hair-color "")
                (cell :source gender "")

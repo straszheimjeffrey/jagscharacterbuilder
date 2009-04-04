@@ -28,7 +28,7 @@
       'base-damage 'hand-to-hand-damage :break
       'charm 'initmidate 'persuade 'recruit :break
  
-      'damage-points :break
+      'damage-points 'ablative-damage :break
 
       'offensive-grapple 'defensive-grapple :break
 
@@ -37,8 +37,9 @@
       'initiative 'perception :break
 
       'agi-bonus 'agi-bonus-hth 'agi-bonus-ranged :break
+      'tbh-hth 'tbh-ranged :break
 
-      'armor-dr 'armor-pen :break
+      'armor-dr 'armor-pen 'force-field :break
 
       'minor-wound-level 'major-wound-level 'critical-wound-level :break
       'hurt-condition 'injured-condition 'serious-condition :break])
