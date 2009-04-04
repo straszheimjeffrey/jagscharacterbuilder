@@ -1037,7 +1037,7 @@
   (def character (deserialize-character ser1))
   
   (use :reload 'jagsrpg.gui)
-  (use :reload 'jagsrpg.model)
+  (use :reload 'jagsrpg.html)
   (use 'clojure.contrib.stacktrace) (e)
 )
 

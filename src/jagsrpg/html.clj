@@ -191,13 +191,18 @@
     (html (tr (th n) (td val) (td cost) (td notes)))))
 
 (defn- skill-row
-  [sk]
+  [ch sk]
   (let [n (:name sk)
         roll (-> sk :modifiables first :cell get-value-from-cell)
         level (-> sk :modifiables second :cell get-value-from-cell)
         cost (-> sk :cost get-value-from-cell)
+        block (if (:hth sk)
+                (let [name (symcat (:symb-name sk) "-block")
+                      v (get-value (:model ch) name)]
+                  (str (first v) " " (second v) " " (nth v 2)))
+                "&nbsp;")
         notes (-> sk :notes get-value-from-cell)]
-    (html (tr (th n) (td roll) (td level) (td cost) (td notes)))))
+    (html (tr (th n) (td roll) (td level) (td cost) (td block) (td notes)))))
 
 (defn- traits-rows
   [ch]
@@ -213,7 +218,7 @@
 (defn- skills-rows
   [ch]
   (let [sks (sort-by :name (filter #(= :skill (:type %)) @(:traits ch)))]
-    (apply str (map skill-row sks))))
+    (apply str (map (partial skill-row ch) sks))))
 
 (defn- damage-row
   [ch name symbs]
@@ -391,6 +396,7 @@
                                                      (th "Roll")
                                                      (th "Level")
                                                      (th "Cost")
+                                                     (th "Block")
                                                      (th "Notes"))
                                                  skill))
                                          (td
