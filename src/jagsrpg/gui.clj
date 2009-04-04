@@ -227,7 +227,7 @@
 
 (defn cost-panel
   [ch]
-  (let [layout (MigLayout. "" "[][].25in[][].2in[][]")
+  (let [layout (MigLayout. "aligny top" "[][].25in[][].2in[][]")
         panel (JPanel. layout)]
     (doto panel
       (.add (label "Name"))
@@ -239,7 +239,7 @@
 
 (defn main-stat-panel
   [ch]
-  (let [layout (MigLayout. "wrap 9")
+  (let [layout (MigLayout. "wrap 9, aligny top")
         panel (JPanel. layout)
         add-row (fn [p-name prim sec1-name sec1 sec2-name sec2 sec3-name sec3]
                   (let [prim-mod (get-primary-stat ch prim)
@@ -269,8 +269,8 @@
         right-layout (MigLayout. "wrap 2")
         right-panel (JPanel. right-layout)]
     (do (doto panel
-          (.add left-panel)
-          (.add right-panel))
+          (.add left-panel "ay top")
+          (.add right-panel "ay top"))
         (doto left-panel
           (.add (label "DP"))
           (.add (tied-label ch 'damage-points))
@@ -313,7 +313,7 @@
 
 (defn damage-panel
   [ch]
-  (let [layout (MigLayout. "wrap 4" "[][]5%[][]")
+  (let [layout (MigLayout. "wrap 4, aligny top" "[][]5%[][]")
         panel (JPanel. layout)]
     (doto panel
       (.add (label "Normal") "sy 4, top")
@@ -359,10 +359,10 @@
   (let [layout (MigLayout. "wrap 3, aligny top")
         panel (JPanel. layout)]
     (doto panel
-      (.add (cost-panel ch) "sx 2")
-      (.add (damage-panel ch) "sy 2")
-      (.add (main-stat-panel ch))
-      (.add (derived-stat-panel ch)))))
+      (.add (cost-panel ch) "sx 2, ay top")
+      (.add (damage-panel ch) "sy 2, ay top")
+      (.add (main-stat-panel ch) "ay top")
+      (.add (derived-stat-panel ch) "ay top"))))
 
 
 ;;; Bottom Panels
@@ -690,7 +690,7 @@
   (let [lm (DefaultListModel.)
         list (JList. lm)
         button (JButton. "Add")
-        layout (MigLayout. "wrap 1")
+        layout (MigLayout. "wrap 1, fill")
         panel (JPanel. layout)
         add-selection (fn []
                         (let [n (.getSelectedValue list)
@@ -720,7 +720,7 @@
            (actionPerformed [evt]
                             (add-selection)))))
       (doto panel
-        (.add (scroll list))
+        (.add (scroll list) "growprio 200, grow 200 200")
         (.add button)))))
   
 (defn trait-display-panel
@@ -732,12 +732,13 @@
 (defn trait-panel
   [ch factories tp extra]
   (let [dp (trait-display-panel ch)
-        layout (MigLayout. "wrap 2" "[50%:n:n][]")
+        layout (MigLayout. "wrap 2, fill" "[50%:n:n][]")
         panel (JPanel. layout)
         traits (filter #(= tp (:type %)) @(:traits ch))]
     (do (doto panel
-          (.add (scroll dp) "grow")
-          (.add (trait-selection-list ch factories dp extra)))
+          (.add (scroll dp) "ay top, growx 150")
+          (.add (trait-selection-list ch factories dp extra)
+                "ay top, growx 100, growy 100"))
         (doseq [t (sort-by :name traits)]
           (if (:hth t)
             (add-hth-skill-to-gui ch dp t extra)
