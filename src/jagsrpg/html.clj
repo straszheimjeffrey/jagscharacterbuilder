@@ -131,19 +131,22 @@
   [ch]
   (html (table {:id "derived-stat"}
                (tr (th "DP") (td ?damage-points)
-                   (th "Charm") (td ?charm))
+                   (th "Abl. Dam." (td ?ablative-damage)))
                (tr (th "Perception") (td ?perception)
-                   (th "Intimidate") (td ?intimidate))
+                   (th "Charm") (td ?charm))
                (tr (th "Initiative") (td ?initiative)
-                   (th "Persuade") (td ?persuade))
+                   (th "Intimidate") (td ?intimidate))
                (tr (th "Speed") (td ?walking-ground-speed "/"
                                     ?running-ground-speed "/"
                                     ?sprinting-ground-speed)
+                   (th "Persuade") (td ?persuade))
+               (tr (th "Base Damage") (td ?base-damage)
                    (th "Recruit") (td ?recruit))
-               (tr (th "Base Damage") (td ?base-damage))
                (tr (th "Grapple") (td ?offensive-grapple "/"
                                       ?defensive-grapple)
-                   (th "Armor") (td "dr " ?armor-dr (br) " pen " ?armor-pen)))))
+                   (th "Armor") (td "dr " ?armor-dr (br) " pen " ?armor-pen))
+               (tr (th "To Be Hit") (td ?tbh-hth "/" ?tbh-ranged)
+                   (th "Force Field") (td ?force-field)))))
 
 (defn- damage-panel
   [ch]
@@ -325,7 +328,7 @@
                    "p" {:margin "5px 0px"}
                    "#top-content-table table" {:margin "2px"
                                                :padding "8px"
-                                               :background-color "#eee"}
+                                               :background-color "#ddd"}
                    "td, th" {:vertical-align "top"
                              :padding "2px 4px 2px 8px"
                              :text-align "left"}
@@ -336,7 +339,7 @@
                    "tr.damage-division td, tr.damage-division th"
                                         {:border-top "1px solid black"}
                    "table.weapons-table, table.damage-table" {:margin "5px 0px 5px 0px"}
-                   ".odd-row" {:background-color "#eee"}
+                   ".odd-row" {:background-color "#ccc"}
                    )]
        (html (style {:type "text/css"}
                     "<!--\n"
