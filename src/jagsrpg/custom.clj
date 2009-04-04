@@ -36,6 +36,8 @@
 
       'initiative 'perception :break
 
+      'agi-bonus 'agi-bonus-hth 'agi-bonus-ranged :break
+
       'armor-dr 'armor-pen :break
 
       'minor-wound-level 'major-wound-level 'critical-wound-level :break

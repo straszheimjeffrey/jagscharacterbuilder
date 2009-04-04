@@ -19,7 +19,7 @@
   (:use clojure.contrib.dataflow)
   (:use [clojure.contrib.except :only (throwf)])
   (:use [clojure.contrib.seq-utils :only (find-first)])
-  (:use [clojure.contrib.math :only (round)]))
+  (:use [clojure.contrib.math :only (round floor)]))
 
 
 ;;; Modifiables
@@ -246,6 +246,11 @@
                (cell injured-condition (apply + ?damage-points ?*injured-condition-mods))
                (cell serious-condition (apply + (* 2 ?damage-points)
                                                 ?*serious-condition-mods))
+
+               (cell agi-bonus (apply + (- ?agi 10) ?*agi-bonus-mods))
+               (cell agi-bonus-hth (apply + ?agi-bonus ?*agi-bonus-hth-mods))
+               (cell agi-bonus-ranged (apply + (floor (/ ?agi-bonus 2))
+                                               ?*agi-bonus-ranged-mods))
 
                (cell :source eye-color "")
                (cell :source hair-color "")
