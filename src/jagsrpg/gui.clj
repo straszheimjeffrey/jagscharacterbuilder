@@ -44,6 +44,7 @@
                       DefaultListModel
                       ListSelectionModel
                       JButton
+                      JCheckBox
                       JMenuBar
                       JMenu
                       JMenuItem
@@ -57,6 +58,7 @@
                       SwingUtilities)
         '(javax.swing.filechooser FileFilter)
         '(java.awt.event ActionListener
+                         ItemListener
                          WindowListener
                          WindowAdapter
                          MouseAdapter
@@ -139,6 +141,27 @@
                  (when (not= n-s (.getText label))
                    (.setText label n-s)))))))
          label))))
+
+(defn tied-checkbox
+  "Build a swing checkbox tied to a boolean"
+  [ch stat]
+  (println "stat" stat)
+  (let [val (get-value (:model ch) stat)
+        checkbox (JCheckBox.)]
+    (do (.setSelected checkbox val)
+        (.setEnabled checkbox true)
+        (.addItemListener checkbox
+              (proxy [ItemListener] []
+                 (itemStateChanged [evt]
+                      (let [cur-m (get-value (:model ch) stat)
+                            cur-gui (.isSelected checkbox)]
+                        (when (not= cur-m cur-gui)
+                          (try
+                           (update-values (:model ch)
+                                          {stat cur-gui})
+                           (catch Exception e
+                             (.setSelected checkbox cur-m))))))))
+        checkbox)))
 
 (defn tied-spinner
   "Build a spinner control that tracks a modifiable"
@@ -240,7 +263,7 @@
 
 (defn derived-stat-panel
   [ch]
-  (let [layout (MigLayout. "wrap 2")
+  (let [layout (MigLayout. "wrap 2, aligny top")
         panel (JPanel. layout)
         left-layout (MigLayout. "wrap 2")
         left-panel (JPanel. left-layout)
@@ -276,7 +299,10 @@
           (.add (tied-label ch 'recruit))
           (.add (label "Armor"))
           (.add (tied-label ch 'armor-dr) "split 2")
-          (.add (tied-label ch 'armor-pen)))
+          (.add (tied-label ch 'armor-pen))
+          (.add (label "Agi bonus"))
+          (.add (tied-label ch 'agi-bonus-hth) "split 2")
+          (.add (tied-label ch 'agi-bonus-ranged)))
         panel)))
 
 (defn damage-panel
@@ -414,6 +440,8 @@
                     (.add panel (tied-spinner ch (mod-map (second f))) "wrap")
                     (.add panel (tied-spinner ch (mod-map (second f)))))))
             (recur (first n) (next n) (fnext n))))
+        (.add panel (label "Use full agi bonus") "right")
+        (.add panel (tied-checkbox ch (-> ct :full-agi :name)) "wrap")
         (.add panel cb "split 2")
         (.add panel sb "wrap")
         (.addActionListener cb

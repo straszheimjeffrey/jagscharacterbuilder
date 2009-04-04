@@ -247,10 +247,15 @@
                (cell serious-condition (apply + (* 2 ?damage-points)
                                                 ?*serious-condition-mods))
 
+               (cell full-agi-bonus (reduce (fn [l r] (or l r))
+                                            false
+                                            ?*full-agi-bonus-mods))
                (cell agi-bonus (apply + (- ?agi 10) ?*agi-bonus-mods))
                (cell agi-bonus-hth (apply + ?agi-bonus ?*agi-bonus-hth-mods))
-               (cell agi-bonus-ranged (apply + (floor (/ ?agi-bonus 2))
-                                               ?*agi-bonus-ranged-mods))
+               (cell agi-bonus-ranged (apply + (if ?full-agi-bonus
+                                                 ?agi-bonus
+                                                 (floor (/ ?agi-bonus 2)))
+                                             ?*agi-bonus-ranged-mods))
 
                (cell :source eye-color "")
                (cell :source hair-color "")

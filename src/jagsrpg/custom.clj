@@ -60,7 +60,14 @@
                    mod-cells# (map second cell-pairs#)
                    name-cell# (cell :source ~(symcat n "-name") "-- custom trait --")
                    notes# (cell :source ~(symcat n "-notes") "")
-                   all-cells# (conj mod-cells# name-cell# notes#)]
+                   full-agi# (cell :source ~(symcat n "-full-agi") false)
+                   full-agi-mods# (cell ~'full-agi-bonus-mods
+                                        ~(var-from-name (symcat n "-full-agi")))
+                   all-cells# (conj mod-cells#
+                                    name-cell#
+                                    notes#
+                                    full-agi#
+                                    full-agi-mods#)]
                (struct-map trait
                  :name ~(make-display-name n)
                  :symb-name (quote ~n)
@@ -68,6 +75,7 @@
                  :modifiables source-mods#
                  :cost nil ; Handled by the main cell matrix
                  :notes notes#
+                 :full-agi full-agi#
                  :cells (concat (mapcat get-modifiable-cells source-mods#)
                                 all-cells#))))))
 
