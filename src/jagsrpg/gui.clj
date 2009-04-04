@@ -481,7 +481,7 @@
         panel (JPanel. layout)
         n (:symb-name ct)
         nm (tied-text-box ch (symcat n "-name") 30)
-        nb (notes-button ch fr n)
+        nb (notes-button ch n)
         sl (get-source-list ct)
         step (fn [mod]
                [(-> mod :cell :name) mod])
@@ -540,9 +540,9 @@
 ;; Notes Button
 
 (defn notes-button
-  [ch fr name]
+  [ch name]
   (let [button (JButton. "Notes")
-        dia (notes-dialog ch fr name)]
+        dia (notes-dialog ch nil name)]
     (.addActionListener button
                         (proxy [ActionListener] []
                           (actionPerformed [evt]
@@ -646,7 +646,7 @@
                    (tied-spinner ch (-> w :modifiables first))
                    (tied-label ch sym)))
         n (tied-text-box ch (-> w :name-cell :name) 10)
-        nts (notes-button ch (find-frame dp) (:symb-name w))
+        nts (notes-button ch (:symb-name w))
         d (JButton. "Delete")]
     (do (.add dp n)
         (doseq [lab labels]
@@ -704,7 +704,7 @@
      (let [nl (label (:name trait))
            sps (map (partial tied-spinner ch) (:modifiables trait))
            c (tied-label (:cost trait))
-           m (notes-button ch (find-frame dp) (:symb-name trait))
+           m (notes-button ch (:symb-name trait))
            d (JButton. "Delete")]
        (.add dp nl)
        (doseq [s sps] (.add dp s))
