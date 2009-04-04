@@ -105,9 +105,10 @@
                     ~add)))
 
 (defmacro hth-skill
-  [n punch cross kick cells]
+  [n blocks [punch cross kick] cells]
   (let [level (var-from-name (symcat n "-level"))
         roll (var-from-name (symcat n "-roll"))
+        block `(cell ~(symcat n "-block") (~blocks (dec ~level)))
         step (fn [arr add n]
                (when arr
                  (conj (impact-chart n)
@@ -115,7 +116,7 @@
         damages (mapcat step [punch cross kick]
                              [0 1 2]
                              [(punch-name n) (cross-name n) (kick-name n)])
-        cells (vec (concat cells damages))]
+        cells (vec (concat [block] cells damages))]
     `(skill-abstract ~n :expensive [~'agi] ~cells :hth)))
  
 (defn compute-grapple-level
@@ -138,9 +139,13 @@
      [(skill acrobatics       :expensive [agi])
       (skill bow              :expensive [cor])
       (hth-skill boxing
-                 [0 1 2 5]
-                 [1 3 4 -9]
-                 nil          ; boxers can't kick
+                 [[-2 -4 -4]
+                  [0 -4 -4]
+                  [0 -4 -4]
+                  [1 -4 -4]]
+                 [[0 1 2 5]
+                  [1 3 4 -9]
+                  nil]         ; boxers can't kick
                  [(cell hurt-condition-mods
                         (condp = ?boxing-level
                                  1 0
@@ -152,39 +157,63 @@
       (skill firearms         :expensive [cor])
       (skill heavy-weapons    :expensive [cor])
       (hth-skill jujitsu
-                 [0 0 1 2]
-                 [0 0 1 2]
-                 [0 0 1 2]
+                 [[-1 -1 -4]
+                  [0 0 -3]
+                  [1 1 -1]
+                  [2 2 0]]
+                 [[0 0 1 2]
+                  [0 0 1 2]
+                  [0 0 1 2]]
                  [(grapple-bonus offensive [1 2 4 -9] jujitsu)
                   (grapple-bonus defensive [1 2 4 -9] jujitsu)])
       (hth-skill karate
-                 [1 2 3 -10]
-                 [1 2 3 -10]
-                 [1 2 3 -10]
+                 [[-3 -3 -4]
+                  [-2 -3 -3]
+                  [0 -2 -2]
+                  [0 0 0]]
+                 [[1 2 3 -10]
+                  [1 2 3 -10]
+                  [1 2 3 -10]]
                  nil)
       (skill knife-fighting   :expensive [agi])
       (hth-skill kung-fu
-                 [0 0 1 2]
-                 [0 0 1 2]
-                 [0 0 1 2]
+                 [[-1 -3 -4]
+                  [0 -1 -3]
+                  [1 0 -2]
+                  [2 0 -1]]
+                 [[0 0 1 2]
+                  [0 0 1 2]
+                  [0 0 1 2]]
                  nil)
       (skill melee-weapons    :expensive [agi]) 
       (skill staff            :expensive [agi])
       (hth-skill streetfighting
-                 [0 0 2 3]
-                 [0 0 2 3]
-                 [0 0 2 3]
+                 [[-3 -4 -4]
+                  [-2 -3 -4]
+                  [-1 -2 -4]
+                  [0 -1 -4]]
+                 [[0 0 2 3]
+                  [0 0 2 3]
+                  [0 0 2 3]]
                  [(grapple-bonus offensive [1 2 3 -9] streetfighting)
                   (grapple-bonus defensive [0 1 2 -12] streetfighting)])
       (hth-skill tae-kwon-do
-                 [0 1 2 4]
-                 [0 1 2 4]
-                 [0 1 2 -9]
+                 [[-3 -4 -4]
+                  [-2 -3 -3]
+                  [-1 -2 -2]
+                  [0 -1 -2]]
+                 [[0 1 2 4]
+                  [0 1 2 4]
+                  [0 1 2 -9]]
                  nil)
       (hth-skill tai-chi
-                 [0 0 0 0]
-                 [0 0 0 0]
-                 [0 0 0 0]
+                 [[0 0 0 0]
+                  [1 -1 -3]
+                  [2 1 0]
+                  [3 3 3]]
+                 [[0 0 0 0]
+                  [0 0 0 0]
+                  [0 0 0 0]]
                  [(grapple-bonus offensive [0 1 2 -10] tai-chi)
                   (grapple-bonus defensive [1 2 4 -7] tai-chi)])
       (skill tangle-weapons   :expensive [cor])
