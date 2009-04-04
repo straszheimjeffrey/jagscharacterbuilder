@@ -249,8 +249,11 @@
         cr (damage-row ch "Cross" (get-impact-symbols 'basic-cross))
         kr (damage-row ch "Kick" (get-impact-symbols 'basic-kick))
         s-rs (mapcat (partial hth-skill-rows ch) hths)
+        defaults (if (empty? s-rs)
+                   [pr cr kr]
+                   nil)
         w-rs (map (partial weapon-row ch) i-wpns)
-        rows (create-striped-rows (concat [pr cr kr] s-rs w-rs))
+        rows (create-striped-rows (concat defaults s-rs w-rs))
         headers (map th-wpn impact-names)
         header (apply str (th "Name") headers)]
     (html (table {:id "impact-damage"
