@@ -109,7 +109,7 @@
   (let [p (.getParent com)]
     (if p
       (recur p)
-      p)))
+      com)))
 
 
 ;;; Error display
@@ -137,6 +137,23 @@
         (.add (.getContentPane fr) panel "pos 50% 25%" 0)
         (validate-to-top fr)
         (schedule-removal fr panel))))
+
+(defn- find-message
+  [ex]
+  (loop [e ex]
+    (if (nil? e)
+      (.getMessage ex)
+      (let [msg (.getMessage e)]
+        (if (and msg
+                 (.startsWith msg exception-prefix))
+          (.substring msg (.length exception-prefix))
+          (recur (.getCause e)))))))
+      
+(defmacro error-action
+  [el & body]
+  `(try ~@body
+      (catch Exception e#
+        (display-error (find-frame ~el) (find-message e#)))))
 
 
 ;;; Components tied to model objects
@@ -185,11 +202,13 @@
                       (let [cur-m (get-value (:model ch) stat)
                             cur-gui (.isSelected checkbox)]
                         (when (not= cur-m cur-gui)
-                          (try
-                           (update-values (:model ch)
-                                          {stat cur-gui})
-                           (catch Exception e
-                             (.setSelected checkbox cur-m))))))))
+                          (error-action checkbox
+                                        (try
+                                         (update-values (:model ch)
+                                                        {stat cur-gui})
+                                         (catch Exception e
+                                           (.setSelected checkbox cur-m)
+                                           (throw e)))))))))
         checkbox)))
 
 (defn tied-spinner
@@ -208,12 +227,14 @@
                           (let [cur-m (-> modifiable :cell get-value-from-cell)
                                 cur-gui (.getValue spinner)]
                             (when (not= cur-m cur-gui)
-                              (try
-                               (update-values (:model ch)
-                                              {(-> modifiable :cell :name)
-                                               cur-gui})
-                               (catch Exception e
-                                 (.setValue spinner cur-m))))))))
+                              (error-action spinner
+                                      (try
+                                       (update-values (:model ch)
+                                                      {(-> modifiable :cell :name)
+                                                       cur-gui})
+                                       (catch Exception e
+                                         (.setValue spinner cur-m)
+                                         (throw e)))))))))
     spinner))
 
 (defn tied-text-component
@@ -1061,14 +1082,14 @@
   (swap! frame-count inc)
   @frame-count
 
-  (display-error (show-frame character) "fred")
+  (show-frame character)
   (print-dataflow (:model character))
   (:traits character)
   (def ser1 (serialize-character character))
   (def character (deserialize-character ser1))
   
   (use :reload 'jagsrpg.gui)
-  (use :reload 'jagsrpg.html)
+  (use :reload 'jagsrpg.model)
   (use 'clojure.contrib.stacktrace) (e)
 )
 

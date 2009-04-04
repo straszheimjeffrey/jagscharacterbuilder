@@ -22,6 +22,8 @@
   (:use [clojure.contrib.math :only (round floor)]))
 
 
+(def exception-prefix "Display: ")
+
 ;;; Modifiables
 
 ; Currently there is only one type of modifiable -- a "ranged modifieable"
