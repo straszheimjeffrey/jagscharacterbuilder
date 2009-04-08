@@ -429,7 +429,8 @@
 
 (def trait-file-filter (proxy [FileFilter] []
                          (accept [f]
-                                 (.matches (.getName f) ".*\\.trait$"))
+                                 (or (.matches (.getName f) ".*\\.trait$")
+                                     (.isDirectory f)))
                          (getDescription [] "JAGS Custom Trait")))
 
 (defn- save-custom-trait
@@ -498,10 +499,10 @@
                m (fnext sl)]
           (when f
             (when (-> f keyword? not)
-              (do (.add panel (label (first f)) "right")
+              (do (.add panel (label (first f)) "pushx, align right")
                   (if (= m :break)
-                    (.add panel (tied-spinner ch (mod-map (second f))) "wrap")
-                    (.add panel (tied-spinner ch (mod-map (second f)))))))
+                    (.add panel (tied-spinner ch (mod-map (second f))) "wrap, sgx control")
+                    (.add panel (tied-spinner ch (mod-map (second f))) "sgx control"))))
             (recur (first n) (next n) (fnext n))))
         (.add panel (label "Use full agi bonus") "right")
         (.add panel (tied-checkbox ch (-> ct :full-agi :name)) "wrap")
@@ -887,12 +888,14 @@
 
 (def file-filter (proxy [FileFilter] []
                   (accept [f]
-                          (.matches (.getName f) ".*\\.jags$"))
+                          (or (.matches (.getName f) ".*\\.jags$")
+                              (.isDirectory f)))
                   (getDescription [] "JAGS Characters")))
 
 (def html-file-filter (proxy [FileFilter] []
                        (accept [f]
-                               (.matches (.getName f) ".*\\.html$"))
+                               (or (.matches (.getName f) ".*\\.html$")
+                                   (.isDirectory f)))
                        (getDescription [] "HTML Document")))
 
 (declare show-frame)
@@ -1017,7 +1020,7 @@
                             (close-frame fr ch))))
       (add-key menu-open KeyEvent/VK_O)
       (add-key menu-save KeyEvent/VK_S)
-      (add-key menu-save-as KeyEvent/VK_A)
+      (add-key menu-close KeyEvent/VK_C)
       (.add bar file)
       (.add file menu-new)
       (.add file menu-open)
