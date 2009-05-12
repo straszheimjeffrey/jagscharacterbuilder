@@ -138,7 +138,7 @@
             (+ (table 18) (* per-2-rea (quot (- n 18) 2)))
             (table n))))
 
-(def compute-walking-speed (make-speed-function walking-speed-table 4))
+(def compute-walking-speed (make-speed-function walking-speed-table 0))
 (def compute-running-speed (make-speed-function running-speed-table 2))
 (def compute-sprinting-speed (make-speed-function sprinting-speed-table 2))
 
