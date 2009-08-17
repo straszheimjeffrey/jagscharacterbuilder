@@ -141,7 +141,7 @@
                              [(cell res-mods (- 7 ?int))])
 
       (standard-secondary-trait photographic-memory mem int :increase)
-      (standard-secondary-trait forgetfull    res int  :decrease)
+      (standard-secondary-trait forgetfull   mem int  :decrease)
       (basic-secondary-trait empty-headed -7 mem int
                              [(cell mem-mods (- 7 ?int))])
 
